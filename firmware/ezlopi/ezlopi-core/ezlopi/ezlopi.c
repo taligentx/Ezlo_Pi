@@ -13,6 +13,10 @@
 #include "ezlopi_devices_list.h"
 #include "ezlopi_system_info.h"
 #include "ezlopi_ethernet.h"
+#include "ezlopi_event_group.h"
+#include "ezlopi_ping.h"
+#include "mac_uuid.h"
+#
 
 static void ezlopi_initialize_devices(void);
 
