@@ -30,9 +30,7 @@ static void blinky(void *pv);
 
 void app_main(void)
 {
-    TRACE_B("sizeof long: %u", sizeof(long));
-    TRACE_B("sizeof long-long: %u", sizeof(long long));
-    TRACE_B("sizeof time_t: %u", sizeof(time_t));
+    gpio_install_isr_service(0);
     qt_serial_init();
     gpio_isr_service_init();
     ezlopi_init();
