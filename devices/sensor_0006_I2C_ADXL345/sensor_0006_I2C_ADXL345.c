@@ -45,7 +45,7 @@ static int16_t get_z_axis_value(s_ezlopi_device_properties_t *properties);
 
 //------------------------------------------------------------------------------
 
-int sensor_i2c_ADXL345_accelerometer(e_ezlopi_actions_t action, s_ezlopi_device_properties_t *properties, void *arg, void *user_arg)
+int sensor_0006_I2C_ADXL345(e_ezlopi_actions_t action, s_ezlopi_device_properties_t *properties, void *arg, void *user_arg)
 {
     switch (action)
     {

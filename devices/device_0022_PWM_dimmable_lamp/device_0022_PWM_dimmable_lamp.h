@@ -1,6 +1,5 @@
-#ifndef __DIMMABLE_BULB_H__
-#define __DIMMABLE_BULB_H__
-
+#ifndef DEVICE_0022_PWM_DIMMABLE_LAMP_H
+#define DEVICE_0022_PWM_DIMMABLE_LAMP_H
 #include "ezlopi_actions.h"
 #include "ezlopi_devices.h"
 
@@ -11,5 +10,5 @@ typedef struct ezlopi_dimmable_bulb_state_struct{
 
 int device_0022_PWM_dimmable_lamp(e_ezlopi_actions_t action, s_ezlopi_device_properties_t *ezlo_device, void *arg, void *user_arg);
 
+#endif // DEVICE_0022_PWM_DIMMABLE_LAMP_H
 
-#endif // __DIMMABLE_BULB_H__

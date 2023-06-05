@@ -110,7 +110,7 @@ static int device_0002_digitalOut_relay_set_value(s_ezlopi_device_properties_t *
             while (configured_devices)
             {
 
-                if ((EZLOPI_SENSOR_0001_LED == configured_devices->device->id) && (255 != configured_devices->properties->interface.gpio.gpio_out.gpio_num))
+                if ((EZLOPI_DEVICE_0001_DIGITAL_OUT_LED == configured_devices->device->id) && (255 != configured_devices->properties->interface.gpio.gpio_out.gpio_num))
                 {
                     TRACE_D("device-id: %d", configured_devices->device->id);
                     TRACE_D("GPIO-pin: %d", configured_devices->properties->interface.gpio.gpio_out.gpio_num);

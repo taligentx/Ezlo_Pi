@@ -11,7 +11,7 @@
 #include "trace.h"
 #include "ezlopi_adc.h"
 #include "dht22.h"
-#include "sensor_0016_OneWire_DHT22.h"
+#include "sensor_0016_oneWire_DHT22.h"
 
 
 static bool dht22_initialized = false;
@@ -35,7 +35,7 @@ static int dht22_sensor_get_sensor_value(s_ezlopi_device_properties_t* propertie
     }
 
 
-int dht22_sensor(e_ezlopi_actions_t action, s_ezlopi_device_properties_t* ezlo_device, void* arg, void* user_args)
+int sensor_0016_oneWire_DHT22(e_ezlopi_actions_t action, s_ezlopi_device_properties_t* ezlo_device, void* arg, void* user_args)
 {
     int ret = 0;
     switch (action)

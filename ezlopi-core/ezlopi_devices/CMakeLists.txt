@@ -34,7 +34,7 @@ idf_component_register(
         sensor_0029_I2C_GXHTC3
         sensor_0030_oneWire_DS18B20
         sensor_0032_ADC_soilMoisture
-        sensor_0016_OneWire_DHT22
+        sensor_0016_oneWire_DHT22
         sensor_0031_other_JSNSR04T
         sensor_0033_ADC_turbidity
         sensor_0034_digitalIn_proximity

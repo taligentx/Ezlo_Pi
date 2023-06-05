@@ -7,7 +7,7 @@
 #include "ezlopi_devices.h"
 
 
-int dht22_sensor(e_ezlopi_actions_t action, s_ezlopi_device_properties_t* ezlo_device, void* arg, void* user_args);
+int sensor_0016_oneWire_DHT22(e_ezlopi_actions_t action, s_ezlopi_device_properties_t* ezlo_device, void* arg, void* user_args);
 
 
 #endif //_016_SENS_DHT22_SENSOR_
