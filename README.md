@@ -47,7 +47,7 @@ idf.py -p <COM Port Name> -b <baud> flash
 idf.py -p <COM Port Name> monitor
 ```
 
-# 4. Working with examples
+# 3. Working with examples
 
 [Fllow from the examples](https://www.ezlopi.com/examples/)
 1. [EzloPi AC Lamp setup with Relay interfacing​](https://www.ezlopi.com/examples/relay-circuitry-and-lamp-circuit-setup/)

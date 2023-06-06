@@ -8,16 +8,6 @@
 #include "ezlopi_devices.h"
 #include "sdkconfig.h"
 
-
-#define EZLOPI_DEVICE_TYPE_NONE                                         0
-#define EZLOPI_DEVICE_TYPE_TEST_DEVICE                                  1
-#define EZLOPI_DEVICE_TYPE_GENERIC                                      2
-#define EZLOPI_DEVICE_TYPE_DEVICE_SWITCHBOX                             3
-#define EZLOPI_DEVICE_TYPE_SENSOR_SOUND                                 4
-#define EZLOPI_DEVICE_TYPE_DEVICE_IR_RF_BLASTER                         5
-#define EZLOPI_DEVICE_TYPE_SENSOR_AMBIENT_TRACKER_PRO                   6
-
-
 // This Preprocessor must be defined to select a device
 #define EZLOPI_DEVICE_TYPE  EZLOPI_DEVICE_TYPE_GENERIC
 
