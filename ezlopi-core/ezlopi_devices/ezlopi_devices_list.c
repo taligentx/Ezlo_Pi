@@ -4,28 +4,29 @@
 #include "device_0001_digitalOut_generic.h"
 #include "device_0002_digitalOut_relay.h"
 #include "device_0003_digitalOut_plug.h"
-//TODO add include for 004
+// TODO add include for 004
 #include "sensor_0005_I2C_MPU6050.h"
 #include "sensor_0006_I2C_ADXL345.h"
 // TODO Include for 0007 - 0011
-#include "sensor_0019_digitalIn_PIR.h"
+#include "sensor_0012_I2C_BME280.h"
+#include "sensor_0016_oneWire_DHT22.h"
+#include "sensor_0017_ADC_potentiometer.h"
 #include "sensor_0018_internal_hall_effect.h"
-#include "device_0022_PWM_dimmable_lamp.h"
+#include "sensor_0019_digitalIn_PIR.h"
 #include "sensor_0020_ADC_2axis_joystick.h"
 #include "sensor_0021_UART_MB1013.h"
-#include "device_0036_PWM_servo_MG996R.h"
-#include "sensor_0024_other_HCSR04.h"
+#include "device_0022_PWM_dimmable_lamp.h"
 #include "sensor_0023_digitalIn_touch_switch_TTP223B.h"
+#include "sensor_0024_other_HCSR04.h"
 #include "sensor_0025_digitalIn_LDR.h"
 #include "sensor_0026_ADC_LDR.h"
 #include "sensor_0027_ADC_waterLeak.h"
 #include "sensor_0029_I2C_GXHTC3.h"
 #include "sensor_0030_oneWire_DS18B20.h"
-#include "sensor_0035_digitalIn_touch_sensor_TPP223B.h"
-#include "sensor_0016_oneWire_DHT22.h"
-#include "sensor_0032_ADC_soilMoisture.h"
 #include "sensor_0031_other_JSNSR04T.h"
-#include "sensor_0017_ADC_potentiometer.h"
+#include "sensor_0032_ADC_soilMoisture.h"
+#include "sensor_0035_digitalIn_touch_sensor_TPP223B.h"
+#include "device_0036_PWM_servo_MG996R.h"
 
 static s_ezlopi_device_t device_array[] = {
 
@@ -221,7 +222,7 @@ static s_ezlopi_device_t device_array[] = {
     #ifdef EZLOPI_SENSOR_0029_I2C_GXHTC3
         {
             .id = EZLOPI_SENSOR_0029_I2C_GXHTC3,
-            .func = gxhtc3_rh_t_sensor,
+            .func = sensor_0029_I2C_GXHTC3,
         },
     #endif
 
@@ -263,12 +264,6 @@ static s_ezlopi_device_t device_array[] = {
             .func = sensor_0035_digitalIn_touch_sensor_TPP223B,
         },
     #endif
-    #ifdef EZLOPI_SENSOR_0005_I2C_MPU6050
-    {
-            .id = EZLOPI_SENSOR_0005_I2C_MPU6050,
-            .func = sensor_0005_I2C_MPU6050,
-    },
-    #endif
 
 #elif (EZLOPI_SWITCH_BOX == EZLOPI_DEVICE_TYPE)
     #ifdef EZLOPI_DEVICE_0001_DIGITAL_OUT_LED
@@ -280,7 +275,7 @@ static s_ezlopi_device_t device_array[] = {
     #ifdef EZLOPI_SENSOR_0029_I2C_GXHTC3
         {
             .id = EZLOPI_SENSOR_0029_I2C_GXHTC3,
-            .func = gxhtc3_rh_t_sensor,
+            .func = sensor_0029_I2C_GXHTC3,
         },
     #endif
 
