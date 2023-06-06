@@ -8,8 +8,6 @@
 #include "ezlopi_devices.h"
 #include "sdkconfig.h"
 
-// This Preprocessor must be defined to select a device
-#define EZLOPI_DEVICE_TYPE  EZLOPI_DEVICE_TYPE_GENERIC
 
 #define EZLOPI_SENSOR_NONE                                              0
 
