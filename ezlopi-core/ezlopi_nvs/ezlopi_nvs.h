@@ -2,6 +2,7 @@
 #define __NVS_STORAGE_H__
 
 #include "nvs_flash.h"
+#include "ezlopi_settings.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -32,6 +33,12 @@ extern "C"
 
     uint32_t ezlopi_nvs_get_provisioning_status(void);
     void ezlopi_nvs_set_provisioning_status(void);
+
+    uint8_t ezlopi_nvs_get_settings_init_status(void);    
+    void ezlopi_nvs_set_settings_init_status(void);
+
+    int ezlopi_settings_save_settings(const l_ezlopi_settings_t * settings_list);
+    // int ezlopi_settings_retrive_settings(s_ezlopi_settings_container* container);
 
 #ifdef __cplusplus
 }

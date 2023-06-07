@@ -36,6 +36,10 @@ void ezlopi_init(void)
     vTaskDelay(10);
     ezlopi_initialize_devices();
     vTaskDelay(10);
+
+    ezlopi_initialize_settings();
+    vTaskDelay(10);
+
     ezlopi_wifi_initialize();
     vTaskDelay(10);
 #if CONFIG_IDF_TARGET_ESP32S3

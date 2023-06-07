@@ -16,6 +16,7 @@ static const char *user_id_nvs_name = "user_id";
 static const char *wifi_info_nvs_name = "wifi_info";
 static const char *boot_count_nvs_name = "boot_count";
 static const char *provisioning_status_nvs_name = "prov_stat";
+static const char *settings_initialized_status_name = "settings_init_status";
 
 static char *ezlopi_nvs_read_str(char *nvs_name);
 static int ezlopi_nvs_write_str(char *data, uint32_t len, char *nvs_name);
@@ -252,6 +253,99 @@ uint32_t ezlopi_nvs_get_boot_count(void)
 
     return boot_count;
 }
+
+uint8_t ezlopi_nvs_get_settings_init_status(void) {
+    uint8_t settings_init_status = 0;
+    if (ezlopi_nvs_handle)
+    {
+        esp_err_t err = nvs_get_u8(ezlopi_nvs_handle, settings_initialized_status_name, &settings_init_status);
+        if (ESP_OK != err)
+        {
+            TRACE_W("nvs_get_u8 - error: %s", esp_err_to_name(err));
+        }
+    }
+
+    return settings_init_status;
+}
+
+void ezlopi_nvs_set_settings_init_status(void) {
+    uint8_t settings_init_status = 1;
+    if (ezlopi_nvs_handle)
+    {
+        esp_err_t err = nvs_set_u8(ezlopi_nvs_handle, settings_initialized_status_name, settings_init_status);
+        if (ESP_OK != err)
+        {
+            TRACE_W("nvs_set_u8 - error: %s", esp_err_to_name(err));
+        }
+    }
+}
+
+int ezlopi_settings_save_settings(const l_ezlopi_settings_t * settings_list)
+{
+    const l_ezlopi_settings_t* settings_list_current = settings_list;
+    while (settings_list_current != NULL) {
+
+        if (settings_list_current->settings_is_enum) 
+        {
+            // ezlopi_nvs_write_str((char *)settings_value, strlen(settings_value), settings_name);
+            TRACE_I("settings_name: %s, settings_value: %s, settings_value_len: %d", settings_list_current->settings_name, (const char*)settings_list_current->settings_value, strlen((const char*)settings_list_current->settings_value));     
+        } 
+        else if (strcmp(settings_list_current->settings_value_type, "bool") == 0)
+        {            
+            // nvs_set_u8(ezlopi_nvs_handle, settings_name, *(bool*)settings_value ? 1 : 0);
+            TRACE_I("settings_name: %s, settings_value: %d", settings_list_current->settings_name, *(bool*)settings_list_current->settings_value ? 1 : 0);
+        }
+        else if (strcmp(settings_list_current->settings_value_type, "int") == 0) 
+        {
+            // nvs_set_i32(ezlopi_nvs_handle, settings_name, *((int32_t *)settings_value));
+            TRACE_I("settings_name: %s, settings_value: %d", settings_list_current->settings_name, *(int32_t *)settings_list_current->settings_value);
+        }
+        else 
+        {
+            TRACE_W("Unknown settings_value type\n");
+        }
+        settings_list_current = settings_list_current->next;
+    }
+    
+    return 1;
+}
+
+#if 0
+int ezlopi_settings_retrive_settings(s_ezlopi_settings_container* container) 
+{
+    for (uint16_t i = 0; i < container->count; i++) 
+    {
+
+        const char* settings_name = container->settings[i].settings_name;
+        const char* settings_value_type = container->settings[i].settings_value_type;
+        void* settings_value = container->settings[i].settings_value;
+        bool settings_is_enum = container->settings[i].settings_is_enum;
+
+        #if 0
+        if (settings_is_enum) 
+        {
+            container->settings[i].settings_value = ezlopi_nvs_read_str(settings_name);            
+        } 
+        else if (strcmp(settings_value_type, "bool") == 0)
+        {  
+            uint8_t setting_val = nvs_get_u8(ezlopi_nvs_handle, settings_name);
+            // *container->settings[i].settings_value
+            nvs_set_u8(ezlopi_nvs_handle, settings_name, *(bool*)settings_value ? 1 : 0);
+        }
+        else if (strcmp(settings_value_type, "int") == 0) 
+        {
+            nvs_set_i32(ezlopi_nvs_handle, settings_name, *((int*)settings_value));
+        }
+        else 
+        {
+            TRACE_W("Unknown settings_value type\n");
+        }
+
+        #endif
+    }  
+    return 1;  
+}
+#endif 
 
 static int ezlopi_nvs_write_str(char *data, uint32_t len, char *nvs_name)
 {
