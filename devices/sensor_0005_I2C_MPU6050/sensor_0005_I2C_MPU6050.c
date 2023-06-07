@@ -149,9 +149,9 @@ const char *mpu6050_err_to_str(mpu6050_err_t err)
 // function to calibrate the raw data
 static void Correct_accel_temp_gyro(raw_mpu6050_data_t *RAW_DATA, mpu6050_data_t *data_p)
 {
-    data_p->ax = (RAW_DATA->raw_ax / acc_sen_calib_val) * STANDARD_G_TO_ACCEL_CONVERSION_VALUE; // in m/s^2
-    data_p->ay = (RAW_DATA->raw_ay / acc_sen_calib_val) * STANDARD_G_TO_ACCEL_CONVERSION_VALUE;
-    data_p->az = (RAW_DATA->raw_az / acc_sen_calib_val) * STANDARD_G_TO_ACCEL_CONVERSION_VALUE;
+    data_p->ax = (RAW_DATA->raw_ax / acc_sen_calib_val) * MPU6050_STANDARD_G_TO_ACCEL_CONVERSION_VALUE; // in m/s^2
+    data_p->ay = (RAW_DATA->raw_ay / acc_sen_calib_val) * MPU6050_STANDARD_G_TO_ACCEL_CONVERSION_VALUE;
+    data_p->az = (RAW_DATA->raw_az / acc_sen_calib_val) * MPU6050_STANDARD_G_TO_ACCEL_CONVERSION_VALUE;
     data_p->gx = (RAW_DATA->raw_gx / gyro_sen_calib_val) - GYRO_X_OFFSET; // deg*/s
     data_p->gy = (RAW_DATA->raw_gy / gyro_sen_calib_val) - GYRO_Y_OFFSET; // deg*/s
     data_p->gz = (RAW_DATA->raw_gz / gyro_sen_calib_val) - GYRO_Z_OFFSET; // deg*/s

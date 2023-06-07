@@ -8,6 +8,7 @@
 #include "sensor_0005_I2C_MPU6050.h"
 #include "sensor_0006_I2C_ADXL345.h"
 // TODO Include for 0007 - 0011
+#include "sensor_0012_I2C_BME280.h"
 #include "sensor_0019_digitalIn_PIR.h"
 #include "sensor_0018_internal_hall_effect.h"
 #include "device_0022_PWM_dimmable_lamp.h"
@@ -29,7 +30,7 @@
 
 static s_ezlopi_device_t device_array[] = {
 
-#if (EZLOPI_DEVICE_TYPE == EZLOPI_DEVICE_TYPE_GENERIC)
+#if ((EZLOPI_DEVICE_TYPE == EZLOPI_DEVICE_TYPE_GENERIC) || (EZLOPI_DEVICE_TYPE == EZLOPI_DEVICE_TYPE_TEST_DEVICE))
 
     #ifdef EZLOPI_DEVICE_0001_DIGITAL_OUT_LED
         {
@@ -57,6 +58,13 @@ static s_ezlopi_device_t device_array[] = {
             .id = EZLOPI_SENSOR_0004_DIGITAL_IN_SWITCH,
             .func = device_0001_digitalOut_generic,
         },
+    #endif
+
+    #ifdef EZLOPI_SENSOR_0005_I2C_MPU6050
+    {
+            .id = EZLOPI_SENSOR_0005_I2C_MPU6050,
+            .func = sensor_0005_I2C_MPU6050,
+    },
     #endif
     
     #ifdef EZLOPI_SENSOR_0005_I2C_MPU6050
@@ -221,7 +229,7 @@ static s_ezlopi_device_t device_array[] = {
     #ifdef EZLOPI_SENSOR_0029_I2C_GXHTC3
         {
             .id = EZLOPI_SENSOR_0029_I2C_GXHTC3,
-            .func = gxhtc3_rh_t_sensor,
+            .func = sensor_0029_I2C_GXHTC3,
         },
     #endif
 
@@ -263,14 +271,14 @@ static s_ezlopi_device_t device_array[] = {
             .func = sensor_0035_digitalIn_touch_sensor_TPP223B,
         },
     #endif
-    #ifdef EZLOPI_SENSOR_0005_I2C_MPU6050
-    {
-            .id = EZLOPI_SENSOR_0005_I2C_MPU6050,
-            .func = sensor_0005_I2C_MPU6050,
-    },
+    #ifdef EZLOPI_DEVICE_0036_PWM_SERVO_MG996R
+        {
+            .id = EZLOPI_DEVICE_0036_PWM_SERVO_MG996R,
+            .func = device_0036_PWM_servo_MG996R,
+        },
     #endif
 
-#elif (EZLOPI_SWITCH_BOX == EZLOPI_DEVICE_TYPE)
+#elif (EZLOPI_DEVICE_TYPE_SWITCH_BOX == EZLOPI_DEVICE_TYPE)
     #ifdef EZLOPI_DEVICE_0001_DIGITAL_OUT_LED
         {
             .id = EZLOPI_DEVICE_0001_DIGITAL_OUT_LED,

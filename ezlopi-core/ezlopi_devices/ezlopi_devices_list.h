@@ -9,18 +9,6 @@
 #include "sdkconfig.h"
 
 
-#define EZLOPI_DEVICE_TYPE_NONE                                         0
-#define EZLOPI_DEVICE_TYPE_TEST_DEVICE                                  1
-#define EZLOPI_DEVICE_TYPE_GENERIC                                      2
-#define EZLOPI_DEVICE_TYPE_DEVICE_SWITCHBOX                             3
-#define EZLOPI_DEVICE_TYPE_SENSOR_SOUND                                 4
-#define EZLOPI_DEVICE_TYPE_DEVICE_IR_RF_BLASTER                         5
-#define EZLOPI_DEVICE_TYPE_SENSOR_AMBIENT_TRACKER_PRO                   6
-
-
-// This Preprocessor must be defined to select a device
-#define EZLOPI_DEVICE_TYPE  EZLOPI_DEVICE_TYPE_GENERIC
-
 #define EZLOPI_SENSOR_NONE                                              0
 
 #define EZLOPI_DEVICE_0001_DIGITAL_OUT_LED                              1
@@ -29,12 +17,12 @@
 #define EZLOPI_SENSOR_0004_DIGITAL_IN_SWITCH                            4
 
 #define EZLOPI_SENSOR_0005_I2C_MPU6050                                  5
-#define EZLOLPI_SENSOR_0006_I2C_ADXL345                                 6
-#define EZLOLPI_SENSOR_0007_I2C_GY271                                   7
-#define EZLOLPI_SENSOR_0008_I2C_LTR303AL                                8
-#define EZLOLPI_DEVICE_0009_OTHER_RMT_SK6812                            9
-#define EZLOLPI_SENSOR_0010_I2C_BME680                                  10
-#define EZLOLPI_SENSOR_0011_I2C_MAX30100                                11
+#define EZLOPI_SENSOR_0006_I2C_ADXL345                                 6
+#define EZLOPI_SENSOR_0007_I2C_GY271                                   7
+#define EZLOPI_SENSOR_0008_I2C_LTR303AL                                8
+#define EZLOPI_DEVICE_0009_OTHER_RMT_SK6812                            9
+#define EZLOPI_SENSOR_0010_I2C_BME680                                  10
+#define EZLOPI_SENSOR_0011_I2C_MAX30100                                11
 #define EZLOPI_SENSOR_0012_I2C_BME280                                   12
 #define EZLOPI_SENSOR_0013_SPI_BME280                                   13
 #define EZLOPI_SENSOR_0014_UART_PMS5003                                 14
@@ -67,6 +55,7 @@
 #define EZLOPI_SENSOR_0033_ADC_TURBIDITY                                33
 #define EZLOPI_SENSOR_0034_DIGITAL_IN_PROXIMITY                         34
 #define EZLOPI_SENSOR_0035_DIGITAL_IN_TPP223B_TOUCH_SENSOR              35
+#define EZLOPI_DEVICE_0036_PWM_SERVO_MG996R                             36
 
 /**
  * @brief defining the type of sensor call function

@@ -38,7 +38,7 @@ void ezlopi_init(void)
     vTaskDelay(10);
     ezlopi_wifi_initialize();
     vTaskDelay(10);
-#if CONFIG_IDF_TARGET_ESP32S3
+#if (EZLOPI_DEVICE_TYPE_AMBIENT_TRACKER_PRO == EZLOPI_DEVICE_TYPE)
     ezlopi_ethernet_init();
 #endif
     uint32_t boot_count = ezlopi_system_info_get_boot_count();

@@ -61,7 +61,7 @@
 #define ADXL345_CONVERTER_FACTOR_MG_TO_G 0.004
 
 // 1g = 9.80665 m/s^2
-#define STANDARD_G_TO_ACCEL_CONVERSION_VALUE 9.80665
+#define ADXL345_STANDARD_G_TO_ACCEL_CONVERSION_VALUE 9.80665
 
 int sensor_0006_I2C_ADXL345(e_ezlopi_actions_t action, s_ezlopi_device_properties_t *properties, void *arg, void *user_arg);
 

@@ -20,6 +20,7 @@ idf_component_register(
         device_0001_digitalOut_generic
         device_0002_digitalOut_relay
         device_0003_digitalOut_plug
+        sensor_0012_I2C_BME280
         sensor_0019_digitalIn_PIR
         sensor_0018_internal_hall_effect
         device_0022_PWM_dimmable_lamp
