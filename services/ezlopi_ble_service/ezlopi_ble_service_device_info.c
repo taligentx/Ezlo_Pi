@@ -10,6 +10,7 @@
 #include "version.h"
 #include "ezlopi_wifi.h"
 
+#include "mac_uuid.h"
 #include "ezlopi_nvs.h"
 #include "ezlopi_ble_gatt.h"
 #include "ezlopi_ble_profile.h"
@@ -120,6 +121,9 @@ static char *device_info_jsonify(void)
         snprintf(mac_string, sizeof(mac_string), "%02x:%02x:%02x:%02x:%02x:%02x",
                  mac_string[0], mac_string[1], mac_string[2], mac_string[3], mac_string[4], mac_string[5]);
         cJSON_AddStringToObject(root, "mac", mac_string);
+        char ezpi_uuid[36];
+        ezlopi_generate_UUID(ezpi_uuid);
+        cJSON_AddStringToObject(root, "uuid", ezpi_uuid);
 
         __add_factory_info_to_root(root, "ezlopi_device_type", ezlopi_factory_info_v2_get_device_type());
         __add_factory_info_to_root(root, "model", ezlopi_factory_info_v2_get_model());
