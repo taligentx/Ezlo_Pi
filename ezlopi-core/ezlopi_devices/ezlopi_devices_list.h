@@ -39,11 +39,7 @@
 #define EZLOPI_SENSOR_0021_UART_MB1013                                  21
 #define EZLOPI_DEVICE_0022_PWM_DIMMABLE_BULB                            22
 #define EZLOPI_SENSOR_0023_DIGITAL_IN_TTP223B_TOUCH_SWITCH              23
-
-#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S3
 #define EZLOPI_SENSOR_0024_OTHER_HCSR04                                 24
-#endif
-
 #define EZLOPI_SENSOR_0025_DIGITAL_IN_LDR_DIGITAL                       25
 #define EZLOPI_SENSOR_0026_ADC_LDR                                      26
 #define EZLOPI_SENSOR_0027_ADC_WATER_LEAK                               27

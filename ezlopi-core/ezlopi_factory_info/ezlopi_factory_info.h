@@ -395,14 +395,14 @@ static const char *test_device_constant_config =
         \"dev_detail\":\
         [\
             {\
-                \"dev_type\": 5,\
-                \"dev_name\": \"MG996R\",\
+                \"dev_type\": 10,\
+                \"dev_name\": \"HCSR04 Ultrasonic\",\
                 \"id_room\": \"\",\
-                \"id_item\": 36,\
-                \"gpio\": 4,\
-                \"duty_cycle\": 0,\
-                \"freq_hz\": 50,\
-                \"pwm_resln\": 8\
+                \"id_item\": 24,\
+                \"gpio1\": 1,\
+                \"gpio2\": 2,\
+                \"en_gpio1\": true,\
+                \"en_gpio2\": true\
             }\
         ],\
     \"dev_total\": 1}";
