@@ -5,13 +5,14 @@
 
 #include "ezlopi_settings.h"
 #include "ezlopi_nvs.h"
+#include "trace.h"
 
 #define MAX_ENUM_VALUES 10
 
 const char *str_ezlopi_settings_date_format = "date.format";
 const char *str_ezlopi_settings_time_format = "time.format";
 const char *str_ezlopi_settings_first_start = "first_start";
-const char *str_ezlopi_settings_scale_temperature = "scale.temperature";
+// const char *str_ezlopi_settings_scale_temperature = "scale.temperature";
 
 // Function to create a new setting
 l_ezlopi_settings_t* ezlopi_settings_create_setting(const char* settings_name,
@@ -106,11 +107,11 @@ void ezlopi_initialize_settings(void) {
     bool firstStart = true;
     ezlopi_settings_add_setting(&settings_list, ezlopi_settings_create_setting(str_ezlopi_settings_first_start, (void*)&firstStart, NULL, 0, "bool", false));
 
-    const char* ezlopi_settings_enum_scale_temperature[] = { "celsius", "fahrenheit" };
-    const uint16_t ezlopi_settings_enum_count_scale_temperature = sizeof(ezlopi_settings_enum_scale_temperature) / sizeof(ezlopi_settings_enum_scale_temperature[0]);
-    const char* ezlopi_settings_enum_scale_temperature_default = ezlopi_settings_enum_scale_temperature[1];
-    ezlopi_settings_add_setting(&settings_list, ezlopi_settings_create_setting(str_ezlopi_settings_scale_temperature, (void*)ezlopi_settings_enum_scale_temperature_default, ezlopi_settings_enum_scale_temperature, ezlopi_settings_enum_count_scale_temperature, "token", true));
-
+    // const char* ezlopi_settings_enum_scale_temperature[] = { "celsius", "fahrenheit" };
+    // const uint16_t ezlopi_settings_enum_count_scale_temperature = sizeof(ezlopi_settings_enum_scale_temperature) / sizeof(ezlopi_settings_enum_scale_temperature[0]);
+    // const char* ezlopi_settings_enum_scale_temperature_default = ezlopi_settings_enum_scale_temperature[1];
+    // ezlopi_settings_add_setting(&settings_list, ezlopi_settings_create_setting(str_ezlopi_settings_scale_temperature, (void*)ezlopi_settings_enum_scale_temperature_default, ezlopi_settings_enum_scale_temperature, ezlopi_settings_enum_count_scale_temperature, "token", true));
+    
     const char* ezlopi_settings_enum_time_format[] = { "12", "24" };
     const uint16_t ezlopi_settings_enum_count_time_format = sizeof(ezlopi_settings_enum_time_format) / sizeof(ezlopi_settings_enum_time_format[0]);
     const char* ezlopi_settings_enum_time_format_default = ezlopi_settings_enum_time_format[0];
@@ -119,14 +120,16 @@ void ezlopi_initialize_settings(void) {
     
     // if(EZLOPI_SETTINGS_INITI_STATUS_FALSE == ezlopi_nvs_get_settings_init_status())
     {
+        TRACE_I("######################################################################################");
         ezlopi_settings_save_settings(settings_list);
 
         ezlopi_nvs_set_settings_init_status();
     }
         
-    if(EZLOPI_SETTINGS_INITI_STATUS_TRUE == ezlopi_nvs_get_settings_init_status()) 
+    // if(EZLOPI_SETTINGS_INITI_STATUS_TRUE == ezlopi_nvs_get_settings_init_status()) 
     {
-        // ezlopi_settings_retrive_settings();
+        TRACE_I("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
+        ezlopi_settings_retrive_settings(settings_list);
     }
 
     // Print settings

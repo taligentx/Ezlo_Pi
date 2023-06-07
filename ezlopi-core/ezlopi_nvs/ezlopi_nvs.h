@@ -38,7 +38,7 @@ extern "C"
     void ezlopi_nvs_set_settings_init_status(void);
 
     int ezlopi_settings_save_settings(const l_ezlopi_settings_t * settings_list);
-    // int ezlopi_settings_retrive_settings(s_ezlopi_settings_container* container);
+    int ezlopi_settings_retrive_settings(l_ezlopi_settings_t * settings_list_source);
 
 #ifdef __cplusplus
 }
