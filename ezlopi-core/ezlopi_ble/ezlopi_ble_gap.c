@@ -25,8 +25,10 @@ static esp_ble_adv_data_t adv_data = {
     .min_interval = 0x0006,
     .max_interval = 0x0010,
     .appearance = 0x00,
-    .manufacturer_len = 0,       // sizeof(manufacturer),
-    .p_manufacturer_data = NULL, //  manufacturer,
+    // .manufacturer_len = sizeof(manufacturer),
+    // .p_manufacturer_data = manufacturer,
+    .manufacturer_len = 0,
+    .p_manufacturer_data = NULL,    
     .service_data_len = 0,
     .p_service_data = NULL,
     .service_uuid_len = 0,
@@ -39,8 +41,10 @@ esp_ble_adv_data_t scan_rsp_data = {
     .include_name = true,
     .include_txpower = true,
     .appearance = 0x00,
-    .manufacturer_len = 0,       // sizeof(manufacturer), // TEST_MANUFACTURER_DATA_LEN,
-    .p_manufacturer_data = NULL, // manufacturer, //&manufacturer[0],
+    // .manufacturer_len = sizeof(manufacturer), // TEST_MANUFACTURER_DATA_LEN,
+    // .p_manufacturer_data = manufacturer,      //&manufacturer[0],
+    .manufacturer_len = 0, // TEST_MANUFACTURER_DATA_LEN,
+    .p_manufacturer_data = NULL,      //&manufacturer[0],    
     .service_data_len = 0,
     .p_service_data = NULL,
     .service_uuid_len = 0,
@@ -690,10 +694,6 @@ static char *ezlopi_ble_gap_event_to_str(esp_gap_ble_cb_event_t event)
     case ESP_GAP_BLE_EVT_MAX:
     {
         ret = "ESP_GAP_BLE_EVT_MAX";
-        break;
-    }
-    default:
-    {
         break;
     }
     }
