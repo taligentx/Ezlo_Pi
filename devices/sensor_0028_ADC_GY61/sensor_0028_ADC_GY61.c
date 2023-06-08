@@ -30,9 +30,9 @@
 //---------------------------------------------------------------------
 
 #ifdef CONFIG_IDF_TARGET_ESP32
-#define esp32_convert_mV_to_G(temp_vol) ((6.0f * (temp_vol - 1300)) / 750.0f) - 3.0f
+#define esp32_convert_mV_to_G(temp_vol) (((2.0f * (temp_vol - 1300)) / 750.0f) - 1.0f)
 #elif CONFIG_IDF_TARGET_ESP32S3
-#define esp32S3_convert_mV_to_G(temp_vol) (((6.0f / 3100.0f) * (temp_vol)) - 3.0f) /*change here too*/
+#define esp32S3_convert_mV_to_G(temp_vol) (((2.0f / 3000.0f) * (temp_vol - 100)) - 1.0f)
 #endif
 
 /********************************** DECLARATION ******************************************/
