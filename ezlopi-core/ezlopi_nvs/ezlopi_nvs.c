@@ -297,13 +297,29 @@ int ezlopi_settings_save_settings(const l_ezlopi_settings_t * settings_list)
                     strlen((const char*)settings_list_current->settings_value));     
         } 
         else if (strcmp(settings_list_current->settings_value_type, "bool") == 0)
-        {            
-            nvs_set_u8(ezlopi_nvs_handle, settings_list_current->settings_name, *(bool*)settings_list_current->settings_value ? 1 : 0);
+        {
+            esp_err_t err = nvs_set_u8(ezlopi_nvs_handle, settings_list_current->settings_name, *(bool*)settings_list_current->settings_value ? 1 : 0);
+            if(ESP_OK != err)
+            {
+                TRACE_E("Error writing u8 value to NVS for key: %s", settings_list_current->settings_name);
+            }
+            else 
+            {
+                TRACE_I("Success writing u8 value to NVS for key: %s", settings_list_current->settings_name);
+            }
             TRACE_I("settings_name: %s, settings_value: %d", settings_list_current->settings_name, *(bool*)settings_list_current->settings_value ? 1 : 0);
         }
         else if (strcmp(settings_list_current->settings_value_type, "int") == 0) 
         {
-            nvs_set_i32(ezlopi_nvs_handle, settings_list_current->settings_name, *((int32_t *)settings_list_current->settings_value));
+            esp_err_t err = nvs_set_i32(ezlopi_nvs_handle, settings_list_current->settings_name, *((int32_t *)settings_list_current->settings_value));
+            if(ESP_OK != err)
+            {
+                TRACE_E("Error writing int32 value to NVS for key: %s", settings_list_current->settings_name);
+            }
+            else 
+            {
+                TRACE_I("Success writing int32 value to NVS for key: %s", settings_list_current->settings_name);
+            }      
             TRACE_I("settings_name: %s, settings_value: %d", settings_list_current->settings_name, *(int32_t *)settings_list_current->settings_value);
         }
         else 
@@ -320,46 +336,52 @@ int ezlopi_settings_retrive_settings(l_ezlopi_settings_t * settings_list)
 {
     while (settings_list != NULL) 
     {
-        // #if 1
-        // if (settings_list->settings_is_enum)
+        if(ezlopi_nvs_handle) 
         {
-            TRACE_I("settings_list->settings_name : %s", settings_list->settings_name);
-            char * enum_settings_value = ezlopi_nvs_read_str(settings_list->settings_name);
-            if(NULL != enum_settings_value) 
+            if (settings_list->settings_is_enum)
             {
-                settings_list->settings_value = (void *)enum_settings_value; // (void *)ezlopi_nvs_read_str(settings_list->settings_name);
+                TRACE_I("settings_list->settings_name : %s", settings_list->settings_name);
+                char * enum_settings_value = ezlopi_nvs_read_str(settings_list->settings_name);
+                if(NULL != enum_settings_value) 
+                {
+                    settings_list->settings_value = (void *)enum_settings_value; // (void *)ezlopi_nvs_read_str(settings_list->settings_name);
 
-                TRACE_I("settings_name: %s, settings_value: %s, settings_value_len: %d", 
-                        settings_list->settings_name, 
-                        (const char*)settings_list->settings_value, 
-                        strlen((const char*)settings_list->settings_value));                  
+                    TRACE_I("settings_name: %s, settings_value: %s, settings_value_len: %d", 
+                            settings_list->settings_name, 
+                            (const char*)settings_list->settings_value, 
+                            strlen((const char*)settings_list->settings_value));                  
 
-            }   
-        } 
-        #if 0
-        else if (strcmp(settings_list->settings_value_type, "bool") == 0)
-        {            
-            uint8_t settings_bool_val;
-            bool settings_bool_val_bool;
-            nvs_get_u8(ezlopi_nvs_handle, settings_list->settings_name, &settings_bool_val);
-            settings_bool_val_bool = (settings_bool_val == 1) ? true : false;
-            settings_list->settings_value = (void *)&settings_bool_val_bool;
-            TRACE_I("settings_name: %s, settings_value: %d", settings_list->settings_name, *(bool*)settings_list->settings_value ? 1 : 0);
-        }
-        else if (strcmp(settings_list->settings_value_type, "int") == 0) 
+                }   
+            } 
+            #if 0
+            else if (strcmp(settings_list->settings_value_type, "bool") == 0)
+            {            
+                uint8_t settings_bool_val;
+                bool settings_bool_val_bool;
+                nvs_get_u8(ezlopi_nvs_handle, settings_list->settings_name, &settings_bool_val);
+                settings_bool_val_bool = (settings_bool_val == 1) ? true : false;
+                settings_list->settings_value = (void *)&settings_bool_val_bool;
+                TRACE_I("settings_name: %s, settings_value: %d", settings_list->settings_name, *(bool*)settings_list->settings_value ? 1 : 0);
+            }
+            else if (strcmp(settings_list->settings_value_type, "int") == 0) 
+            {
+                int32_t settings_int_val = 0;
+                nvs_get_i32(ezlopi_nvs_handle, settings_list->settings_name, &settings_int_val);
+                settings_list->settings_value = (void *)&settings_int_val;
+                TRACE_I("settings_name: %s, settings_value: %d", settings_list->settings_name, *(int32_t *)settings_list->settings_value);
+            }
+            else 
+            {
+                TRACE_W("Unknown settings_value type\n");
+            }
+        #endif
+            settings_list = settings_list->next;
+        } else 
         {
-            int32_t settings_int_val = 0;
-            nvs_get_i32(ezlopi_nvs_handle, settings_list->settings_name, &settings_int_val);
-            settings_list->settings_value = (void *)&settings_int_val;
-            TRACE_I("settings_name: %s, settings_value: %d", settings_list->settings_name, *(int32_t *)settings_list->settings_value);
+            TRACE_E("NVS Handle invalid.");
         }
-        else 
-        {
-            TRACE_W("Unknown settings_value type\n");
-        }
-    #endif
-        settings_list = settings_list->next;
     }
+
     return 1;
 
 }
@@ -403,9 +425,12 @@ static char *ezlopi_nvs_read_str(char *nvs_name)
     if (1 == ezlopi_nvs_init())
     {
         esp_err_t err = ESP_OK;
-        size_t buf_len_needed;
+        size_t buf_len_needed = 0;
         err = nvs_get_str(ezlopi_nvs_handle, nvs_name, NULL, &buf_len_needed);
-
+        TRACE_I("Key Name: %s", nvs_name);
+        TRACE_I("NVS get string status %s", esp_err_to_name(err));
+        // TRACE_I("buf_len_needed: %d", buf_len_needed);
+        
         if (buf_len_needed && (ESP_OK == err))
         {
             return_str = malloc(buf_len_needed + 1);
