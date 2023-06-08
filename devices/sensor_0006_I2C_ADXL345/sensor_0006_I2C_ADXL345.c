@@ -13,6 +13,7 @@
 #include "ezlopi_cloud_value_type_str.h"
 #include "ezlopi_device_value_updated.h"
 
+//------------------------------------------------------------------------------
 #define ADD_PROPERTIES_DEVICE_LIST(device_id, category, subcategory, item_name, value_type, cjson_device)                             \
     {                                                                                                                                 \
         s_ezlopi_device_properties_t *_properties = sensor_i2c_accelerometer_prepare_properties(device_id, category, subcategory,     \
@@ -23,7 +24,6 @@
         }                                                                                                                             \
     }
 
-static bool device_initialized = false;
 //------------------------------------------------------------------------------
 
 static int sensor_i2c_accelerometer_prepare(void *arg);
@@ -39,9 +39,9 @@ static esp_err_t set_to_measure_mode(s_ezlopi_device_properties_t *properties);
 static esp_err_t reset_measure_mode(s_ezlopi_device_properties_t *properties);
 static esp_err_t enable_data_ready_interrupt(s_ezlopi_device_properties_t *properties);
 
-static int16_t get_x_axis_value(s_ezlopi_device_properties_t *properties);
-static int16_t get_y_axis_value(s_ezlopi_device_properties_t *properties);
-static int16_t get_z_axis_value(s_ezlopi_device_properties_t *properties);
+static int16_t get_adxl345_x_axis_value(s_ezlopi_device_properties_t *properties);
+static int16_t get_adxl345_y_axis_value(s_ezlopi_device_properties_t *properties);
+static int16_t get_adxl345_z_axis_value(s_ezlopi_device_properties_t *properties);
 
 //------------------------------------------------------------------------------
 
@@ -87,11 +87,11 @@ static int sensor_i2c_accelerometer_prepare(void *arg)
     if ((NULL != prep_arg) && (NULL != prep_arg->cjson_device))
     {
         uint32_t device_id = ezlopi_cloud_generate_device_id();
-        ADD_PROPERTIES_DEVICE_LIST(device_id, category_level_sensor, subcategory_navigation, ezlopi_item_name_acceleration_x_axis, value_type_acceleration, prep_arg->cjson_device);
+        ADD_PROPERTIES_DEVICE_LIST(device_id, category_generic_sensor, subcategory_not_defined, ezlopi_item_name_acceleration_x_axis, value_type_int, prep_arg->cjson_device);
         device_id = ezlopi_cloud_generate_device_id();
-        ADD_PROPERTIES_DEVICE_LIST(device_id, category_level_sensor, subcategory_navigation, ezlopi_item_name_acceleration_y_axis, value_type_acceleration, prep_arg->cjson_device);
+        ADD_PROPERTIES_DEVICE_LIST(device_id, category_generic_sensor, subcategory_not_defined, ezlopi_item_name_acceleration_y_axis, value_type_int, prep_arg->cjson_device);
         device_id = ezlopi_cloud_generate_device_id();
-        ADD_PROPERTIES_DEVICE_LIST(device_id, category_level_sensor, subcategory_navigation, ezlopi_item_name_acceleration_z_axis, value_type_acceleration, prep_arg->cjson_device);
+        ADD_PROPERTIES_DEVICE_LIST(device_id, category_generic_sensor, subcategory_not_defined, ezlopi_item_name_acceleration_z_axis, value_type_int, prep_arg->cjson_device);
     }
     return ret;
 }
@@ -189,21 +189,21 @@ static int sensor_i2c_accelerometer_get_value_cjson(s_ezlopi_device_properties_t
     {
         if (ezlopi_item_name_acceleration_x_axis == properties->ezlopi_cloud.item_name)
         {
-            acceleration_value = (get_x_axis_value(properties) * ADXL345_CONVERTER_FACTOR_MG_TO_G * STANDARD_G_TO_ACCEL_CONVERSION_VALUE);
+            acceleration_value = (get_adxl345_x_axis_value(properties) * ADXL345_CONVERTER_FACTOR_MG_TO_G * ADXL345_STANDARD_G_TO_ACCEL_CONVERSION_VALUE);
             TRACE_I("X-axis : %.2f", acceleration_value);
             cJSON_AddNumberToObject(cjson_properties, "value", acceleration_value);
             cJSON_AddStringToObject(cjson_properties, "scale", "meter_per_square_second");
         }
         if (ezlopi_item_name_acceleration_y_axis == properties->ezlopi_cloud.item_name)
         {
-            acceleration_value = (get_y_axis_value(properties) * ADXL345_CONVERTER_FACTOR_MG_TO_G * STANDARD_G_TO_ACCEL_CONVERSION_VALUE);
+            acceleration_value = (get_adxl345_y_axis_value(properties) * ADXL345_CONVERTER_FACTOR_MG_TO_G * ADXL345_STANDARD_G_TO_ACCEL_CONVERSION_VALUE);
             TRACE_I("Y-axis : %.2f", acceleration_value);
             cJSON_AddNumberToObject(cjson_properties, "value", acceleration_value);
             cJSON_AddStringToObject(cjson_properties, "scale", "meter_per_square_second");
         }
         if (ezlopi_item_name_acceleration_z_axis == properties->ezlopi_cloud.item_name)
         {
-            acceleration_value = (get_z_axis_value(properties) * ADXL345_CONVERTER_FACTOR_MG_TO_G * STANDARD_G_TO_ACCEL_CONVERSION_VALUE);
+            acceleration_value = (get_adxl345_z_axis_value(properties) * ADXL345_CONVERTER_FACTOR_MG_TO_G * ADXL345_STANDARD_G_TO_ACCEL_CONVERSION_VALUE);
             TRACE_I("Z-axis : %.2f", acceleration_value);
             cJSON_AddNumberToObject(cjson_properties, "value", acceleration_value);
             cJSON_AddStringToObject(cjson_properties, "scale", "meter_per_square_second");
@@ -276,7 +276,7 @@ static esp_err_t adxl345_check_data_ready_INTR(s_ezlopi_device_properties_t *pro
     return err;
 }
 
-static int16_t get_x_axis_value(s_ezlopi_device_properties_t *properties)
+static int16_t get_adxl345_x_axis_value(s_ezlopi_device_properties_t *properties)
 {
     uint8_t buffer_0, buffer_1;
     uint8_t Check_Register = 0;
@@ -309,7 +309,7 @@ static int16_t get_x_axis_value(s_ezlopi_device_properties_t *properties)
     return x_data;
 }
 
-static int16_t get_y_axis_value(s_ezlopi_device_properties_t *properties)
+static int16_t get_adxl345_y_axis_value(s_ezlopi_device_properties_t *properties)
 {
     uint8_t buffer_0, buffer_1;
     uint8_t Check_Register = 0;
@@ -341,7 +341,7 @@ static int16_t get_y_axis_value(s_ezlopi_device_properties_t *properties)
     return y_data;
 }
 
-static int16_t get_z_axis_value(s_ezlopi_device_properties_t *properties)
+static int16_t get_adxl345_z_axis_value(s_ezlopi_device_properties_t *properties)
 {
     uint8_t buffer_0, buffer_1;
     uint8_t Check_Register = 0;

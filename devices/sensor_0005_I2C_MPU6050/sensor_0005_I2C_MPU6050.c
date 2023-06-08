@@ -149,9 +149,9 @@ const char *mpu6050_err_to_str(mpu6050_err_t err)
 // function to calibrate the raw data
 static void Correct_accel_temp_gyro(raw_mpu6050_data_t *RAW_DATA, mpu6050_data_t *data_p)
 {
-    data_p->ax = (RAW_DATA->raw_ax / acc_sen_calib_val) * STANDARD_G_TO_ACCEL_CONVERSION_VALUE; // in m/s^2
-    data_p->ay = (RAW_DATA->raw_ay / acc_sen_calib_val) * STANDARD_G_TO_ACCEL_CONVERSION_VALUE;
-    data_p->az = (RAW_DATA->raw_az / acc_sen_calib_val) * STANDARD_G_TO_ACCEL_CONVERSION_VALUE;
+    data_p->ax = (RAW_DATA->raw_ax / acc_sen_calib_val) * MPU6050_STANDARD_G_TO_ACCEL_CONVERSION_VALUE; // in m/s^2
+    data_p->ay = (RAW_DATA->raw_ay / acc_sen_calib_val) * MPU6050_STANDARD_G_TO_ACCEL_CONVERSION_VALUE;
+    data_p->az = (RAW_DATA->raw_az / acc_sen_calib_val) * MPU6050_STANDARD_G_TO_ACCEL_CONVERSION_VALUE;
     data_p->gx = (RAW_DATA->raw_gx / gyro_sen_calib_val) - GYRO_X_OFFSET; // deg*/s
     data_p->gy = (RAW_DATA->raw_gy / gyro_sen_calib_val) - GYRO_Y_OFFSET; // deg*/s
     data_p->gz = (RAW_DATA->raw_gz / gyro_sen_calib_val) - GYRO_Z_OFFSET; // deg*/s
@@ -292,11 +292,11 @@ static void i2c_mpu6050_sensor_prepare(void *arg)
     {
         uint32_t device_id = 0;
         device_id = ezlopi_cloud_generate_device_id();
-        ADD_PROPERTIES_DEVICE_LIST(device_id, category_generic_sensor, subcategory_not_defined, ezlopi_item_name_acceleration_x_axis, value_type_acceleration, prep_arg->cjson_device);
+        ADD_PROPERTIES_DEVICE_LIST(device_id, category_generic_sensor, subcategory_not_defined, ezlopi_item_name_acceleration_x_axis, value_type_int, prep_arg->cjson_device);
         device_id = ezlopi_cloud_generate_device_id();
-        ADD_PROPERTIES_DEVICE_LIST(device_id, category_generic_sensor, subcategory_not_defined, ezlopi_item_name_acceleration_y_axis, value_type_acceleration, prep_arg->cjson_device);
+        ADD_PROPERTIES_DEVICE_LIST(device_id, category_generic_sensor, subcategory_not_defined, ezlopi_item_name_acceleration_y_axis, value_type_int, prep_arg->cjson_device);
         device_id = ezlopi_cloud_generate_device_id();
-        ADD_PROPERTIES_DEVICE_LIST(device_id, category_generic_sensor, subcategory_not_defined, ezlopi_item_name_acceleration_z_axis, value_type_acceleration, prep_arg->cjson_device);
+        ADD_PROPERTIES_DEVICE_LIST(device_id, category_generic_sensor, subcategory_not_defined, ezlopi_item_name_acceleration_z_axis, value_type_int, prep_arg->cjson_device);
 
         device_id = ezlopi_cloud_generate_device_id();
         ADD_PROPERTIES_DEVICE_LIST(device_id, category_temperature, subcategory_not_defined, ezlopi_item_name_temp, value_type_temperature, prep_arg->cjson_device);

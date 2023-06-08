@@ -56,8 +56,8 @@ int sensor_0029_I2C_GXHTC3(e_ezlopi_actions_t action, s_ezlopi_device_properties
     return ret;
 }
 
-float temperature = 0.0;
-float relative_humidity = 0.0;
+static float temperature = 0.0;
+static float relative_humidity = 0.0;
 
 static void wgxhtc3_sensor_read_sensor_data(s_ezlopi_device_properties_t *properties)
 {
