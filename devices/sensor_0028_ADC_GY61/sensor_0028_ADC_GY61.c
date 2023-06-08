@@ -15,7 +15,7 @@
 #include "trace.h"
 #include "cJSON.h"
 
-//---------------------------------------------------------------------
+//------------- defination --------------------------------------------------------
 
 #define ADD_PROPERTIES_DEVICE_LIST(device_id, category, subcategory, item_name, value_type, cjson_device)                              \
     {                                                                                                                                  \
@@ -28,6 +28,8 @@
     }
 
 //---------------------------------------------------------------------
+
+// conversion for acd to G
 
 #ifdef CONFIG_IDF_TARGET_ESP32
 #define esp32_convert_mV_to_G(temp_vol) (((2.0f * (temp_vol - 1300)) / 750.0f) - 1.0f)
@@ -332,7 +334,6 @@ static float get_gy61_z_axis_value(s_ezlopi_device_properties_t *properties)
     }
 #endif
     free(ezlopi_analog_data);
-
     TRACE_B("Z_Vol_data : {%d mV} ;  Z_G_data : {%0.2fG}", temp_vol, Z_G_data);
     return Z_G_data;
 }
