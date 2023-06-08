@@ -32,9 +32,9 @@
 // conversion for acd to G
 
 #ifdef CONFIG_IDF_TARGET_ESP32
-#define esp32_convert_mV_to_G(temp_vol) (((2.0f * (temp_vol - 1300)) / 750.0f) - 1.0f)
+#define esp32_convert_mV_to_G(temp_vol) (((6.0f * (temp_vol - 1300)) / 750.0f) - 3.0f)
 #elif CONFIG_IDF_TARGET_ESP32S3
-#define esp32S3_convert_mV_to_G(temp_vol) (((2.0f / 3000.0f) * (temp_vol - 100)) - 1.0f)
+#define esp32S3_convert_mV_to_G(temp_vol) (((6.0f / 3000.0f) * (temp_vol - 100)) - 3.0f)
 #endif
 
 /********************************** DECLARATION ******************************************/
