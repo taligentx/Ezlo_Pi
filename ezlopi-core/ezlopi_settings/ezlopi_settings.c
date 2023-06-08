@@ -46,6 +46,37 @@ void ezlopi_settings_add_setting(l_ezlopi_settings_t** head, l_ezlopi_settings_t
     }
 }
 
+void ezlopi_settings_modify_setting(l_ezlopi_settings_t* head, const char* setting_name, void* new_value) {
+
+    l_ezlopi_settings_t* current = head;
+    
+    while (current != NULL)
+    {
+        if (strcmp(current->settings_name, setting_name) == 0) 
+        {
+            current->settings_value = new_value;
+        }
+        current = current->next;
+    }
+}
+
+void ezlopi_settings_get_setting(l_ezlopi_settings_t* head, const char* setting_name, void ** get_value) {
+
+    l_ezlopi_settings_t* current = head;
+    
+    while (current != NULL)
+    {
+        if (strcmp(current->settings_name, setting_name) == 0) 
+        {
+            *get_value = current->settings_value;
+            return;         
+        }
+        current = current->next;
+    }
+
+    *get_value = NULL;
+}
+
 // Function to free the memory used by the linked list
 void ezlopi_settings_free_settings(l_ezlopi_settings_t** head) {
     l_ezlopi_settings_t* current = *head;
@@ -106,11 +137,6 @@ void ezlopi_initialize_settings(void) {
 
     bool firstStart = true;
     ezlopi_settings_add_setting(&settings_list, ezlopi_settings_create_setting(str_ezlopi_settings_first_start, (void*)&firstStart, NULL, 0, "bool", false));
-
-    // const char* ezlopi_settings_enum_scale_temperature[] = { "celsius", "fahrenheit" };
-    // const uint16_t ezlopi_settings_enum_count_scale_temperature = sizeof(ezlopi_settings_enum_scale_temperature) / sizeof(ezlopi_settings_enum_scale_temperature[0]);
-    // const char* ezlopi_settings_enum_scale_temperature_default = ezlopi_settings_enum_scale_temperature[1];
-    // ezlopi_settings_add_setting(&settings_list, ezlopi_settings_create_setting(str_ezlopi_settings_scale_temperature, (void*)ezlopi_settings_enum_scale_temperature_default, ezlopi_settings_enum_scale_temperature, ezlopi_settings_enum_count_scale_temperature, "token", true));
     
     const char* ezlopi_settings_enum_time_format[] = { "12", "24" };
     const uint16_t ezlopi_settings_enum_count_time_format = sizeof(ezlopi_settings_enum_time_format) / sizeof(ezlopi_settings_enum_time_format[0]);
@@ -134,6 +160,28 @@ void ezlopi_initialize_settings(void) {
 
     // Print settings
     ezlopi_settings_print_settings(settings_list);
+    ezlopi_settings_modify_setting(settings_list, str_ezlopi_settings_date_format, ezlopi_settings_enum_value_date_format[1]);
+    firstStart = false;
+    ezlopi_settings_modify_setting(settings_list, str_ezlopi_settings_first_start, (void *)&firstStart);
+    ezlopi_settings_modify_setting(settings_list, str_ezlopi_settings_time_format, ezlopi_settings_enum_time_format[1]);
+    ezlopi_settings_print_settings(settings_list);
+
+    TRACE_I("88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888");
+    void* targetValue = NULL;
+    // bool read_data_firstStart = true;
+    ezlopi_settings_get_setting(settings_list, str_ezlopi_settings_first_start, (void *)&targetValue);
+    TRACE_D("read_data_firstStart: %s", *(bool *)targetValue ? "TRUE" : "FALSE");
+
+    // char read_date_format[50];
+    targetValue = NULL;
+    ezlopi_settings_get_setting(settings_list, str_ezlopi_settings_date_format, (void *)&targetValue);
+    TRACE_D("read_date_format: %s", (const char *)targetValue);
+
+    targetValue = NULL;
+    ezlopi_settings_get_setting(settings_list, str_ezlopi_settings_time_format, (void *)&targetValue);
+    TRACE_D("read_time_format: %s", (const char *)targetValue);
+
+
 
     // Clean up
     ezlopi_settings_free_settings(&settings_list);
