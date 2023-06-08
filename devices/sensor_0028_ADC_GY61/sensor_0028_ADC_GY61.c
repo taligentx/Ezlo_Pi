@@ -15,7 +15,7 @@
 #include "trace.h"
 #include "cJSON.h"
 
-//------------- defination --------------------------------------------------------
+//---------------------------------------------------------------------
 
 #define ADD_PROPERTIES_DEVICE_LIST(device_id, category, subcategory, item_name, value_type, cjson_device)                              \
     {                                                                                                                                  \
