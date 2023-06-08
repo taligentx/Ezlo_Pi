@@ -59,33 +59,33 @@ void ezlopi_settings_free_settings(l_ezlopi_settings_t** head) {
 
 // Function to print the settings
 void ezlopi_settings_print_settings(const l_ezlopi_settings_t* head) {
-    printf("Settings:\n");
+    TRACE_D("################################# Settings:\n ######################################## ");
     const l_ezlopi_settings_t* current = head;
     while (current != NULL) {
-        printf("Name: %s\n", current->settings_name);
-        printf("Value: ");
+        TRACE_D("Name: %s\n", current->settings_name);
+        TRACE_D("Value: ");
 
         if (current->settings_is_enum) {
             const char* enumValue = (const char*)current->settings_value;
-            printf("%s\n", enumValue);
+            TRACE_D("%s\n", enumValue);
         } else if (strcmp(current->settings_value_type, "bool") == 0) {
             bool boolValue = *((bool*)current->settings_value);
-            printf("%s\n", boolValue ? "true" : "false");
+            TRACE_D("%s\n", boolValue ? "true" : "false");
         } else if (strcmp(current->settings_value_type, "int") == 0) {
             int intValue = *((int*)current->settings_value);
-            printf("%d\n", intValue);
+            TRACE_D("%d\n", intValue);
         } else if (strcmp(current->settings_value_type, "float") == 0) {
             float floatValue = *((float*)current->settings_value);
-            printf("%f\n", floatValue);
+            TRACE_D("%f\n", floatValue);
         } else {
-            printf("Unknown settings_value type\n");
+            TRACE_D("Unknown settings_value type\n");
         }
 
         if (current->settings_is_enum) {
-            printf("Enum Values:\n");
+            TRACE_D("Enum Values:\n");
             for (uint16_t j = 0; j < current->settings_enum_count; j++) {
                 const char* enumItem = ((const char**)current->settings_enum_values)[j];
-                printf("%s\n", enumItem);
+                TRACE_D("%s\n", enumItem);
             }
         }
 
@@ -122,7 +122,7 @@ void ezlopi_initialize_settings(void) {
     {
         TRACE_I("######################################################################################");
         ezlopi_settings_save_settings(settings_list);
-
+        ezlopi_settings_print_settings(settings_list);
         ezlopi_nvs_set_settings_init_status();
     }
         
