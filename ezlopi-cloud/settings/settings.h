@@ -2,14 +2,15 @@
 #define __HUB_SETTINGS_H__
 
 #include <string.h>
-#include "frozen.h"
+#include "cJSON.h"
+#include "ezlopi_settings.h"
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-    char *settings_list(const char *payload, uint32_t len, struct json_token *method, uint32_t msg_count);
+    void settings_list(cJSON *cj_request, cJSON *cj_response);
 
 #ifdef __cplusplus
 }

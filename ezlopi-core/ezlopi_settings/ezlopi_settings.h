@@ -1,6 +1,7 @@
 #ifndef EZLOPI_SETTINGS_H
 #define EZLOPI_SETTINGS_H
 
+#include <stdbool.h>
 typedef enum {
     EZLOPI_SETTINGS_INITI_STATUS_TRUE,
     EZLOPI_SETTINGS_INITI_STATUS_FALSE
@@ -27,5 +28,7 @@ typedef struct s_ezlopi_settings {
 } s_ezlopi_settings_t;
 
 void ezlopi_initialize_settings(void);
+uint16_t ezlopi_settings_get_settings_count(void);
+s_ezlopi_settings_t *ezlopi_settings_get_settings_list(void);
 
 #endif  // EZLOPI_SETTINGS_H
