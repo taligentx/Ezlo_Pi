@@ -121,7 +121,7 @@ static char *device_info_jsonify(void)
         snprintf(mac_string, sizeof(mac_string), "%02x:%02x:%02x:%02x:%02x:%02x",
                  mac_string[0], mac_string[1], mac_string[2], mac_string[3], mac_string[4], mac_string[5]);
         cJSON_AddStringToObject(root, "mac", mac_string);
-        char ezpi_uuid[36];
+        char ezpi_uuid[50];
         ezlopi_generate_UUID(ezpi_uuid);
         cJSON_AddStringToObject(root, "uuid", ezpi_uuid);
 
@@ -139,7 +139,7 @@ static char *device_info_jsonify(void)
         cJSON_AddStringToObject(root, "wifi-netmask", ip4addr_ntoa((const ip4_addr_t *)&wifi_ip_info->netmask));
         cJSON_AddNumberToObject(root, "wifi-connection_status", ezlopi_wifi_got_ip());
         cJSON_AddStringToObject(root, "wifi-error", ezlopi_wifi_get_last_disconnect_reason());
-        const char *internet_status_str = ezlopi_ping_get_internet_status() ? "Internet available" : "Internet not available";
+        const char *internet_status_str = (EZLOPI_PING_STATUS_LIVE == ezlopi_ping_get_internet_status()) ? "Internet available" : "Internet not available";
         cJSON_AddStringToObject(root, "internet_status", internet_status_str);
 
         device_info = cJSON_Print(root);
