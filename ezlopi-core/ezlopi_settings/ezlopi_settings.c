@@ -20,46 +20,25 @@ s_ezlopi_settings_t ezlopi_settings_list[] = {
         .value_type = EZLOPI_SETTINGS_TYPE_BOOL
     },
     {
-        .enum_values = {"celsius", "fahrenheit"},
-        .name = "scale.temperature",
-        .value.token_value = "fahrenheit",
-        .value_type = EZLOPI_SETTINGS_TYPE_TOKEN
-    },
-    {
         .enum_values = {"12", "24"},
         .name = "time.format",
         .value.token_value = "12",
         .value_type = EZLOPI_SETTINGS_TYPE_TOKEN
-    },
-    {
-        .enum_values = {"ERROR", "WARNING", "INFO", "DEBUG", "TRACE"},
-        .name = "logs.level",
-        .value.token_value = "INFO",
-        .value_type = EZLOPI_SETTINGS_TYPE_TOKEN
-    },
-    {
-        .name = "logs.color",
-        .value.bool_value = false,
-        .value_type = EZLOPI_SETTINGS_TYPE_BOOL
-    },
-    {
-        .enum_values = {"-1", "2", "4", "8"},
-        .name = "logs.indent",
-        .value.token_value = "-1",
-        .value_type = EZLOPI_SETTINGS_TYPE_TOKEN
-    },
-    {
-        .name = "some_integer_value",
-        .value.int_value = 42,
-        .value_type = EZLOPI_SETTINGS_TYPE_INT
     }
 };
 
-// Function to modify a single setting value
-void modifySetting(const char* name, const void* value) {
-    for (size_t i = 0; i < sizeof(ezlopi_settings_list) / sizeof(ezlopi_settings_list[0]); i++) {
-        if (strcmp(ezlopi_settings_list[i].name, name) == 0) {
-            switch (ezlopi_settings_list[i].value_type) {
+uint16_t ezlopi_settings_get_settings_count(void) {
+    return sizeof(ezlopi_settings_list) / sizeof(ezlopi_settings_list[0]);
+}
+
+void ezlopi_settings_modify_setting(const char* name, const void* value) 
+{
+    for (size_t i = 0; i < ezlopi_settings_get_settings_count(); i++) 
+    {
+        if (strcmp(ezlopi_settings_list[i].name, name) == 0) 
+        {
+            switch (ezlopi_settings_list[i].value_type) 
+            {
                 case EZLOPI_SETTINGS_TYPE_TOKEN:
                     ezlopi_settings_list[i].value.token_value = (const char*)value;
                     break;
@@ -69,148 +48,127 @@ void modifySetting(const char* name, const void* value) {
                 case EZLOPI_SETTINGS_TYPE_INT:
                     ezlopi_settings_list[i].value.int_value = *((int*)value);
                     break;
+                default:
+                    break;
             }
             break;
         }
     }
 }
 
-const char *str_ezlopi_settings_date_format = "date.format";
-const char *str_ezlopi_settings_time_format = "time.format";
-const char *str_ezlopi_settings_first_start = "first_start";
-// const char *str_ezlopi_settings_scale_temperature = "scale.temperature";
-
-// Function to create a new setting
-l_ezlopi_settings_t* ezlopi_settings_create_setting(const char* settings_name,
-    void* settings_value,
-    const void* settings_enum_values,
-    uint16_t settings_enum_count,
-    const char* settings_value_type,
-    bool settings_is_enum)
+// Function to read the value of a single setting
+void ezlopi_settings_read_setting(const char* name, void* value) 
 {
-    l_ezlopi_settings_t* setting = malloc(sizeof(l_ezlopi_settings_t));
-    setting->settings_name = settings_name;
-    setting->settings_value = settings_value;
-    setting->settings_enum_values = settings_enum_values;
-    setting->settings_enum_count = settings_enum_count;
-    setting->settings_value_type = settings_value_type;
-    setting->settings_is_enum = settings_is_enum;
-    setting->next = NULL;
-    return setting;
-}
-
-// Function to add a setting to the linked list
-void ezlopi_settings_add_setting(l_ezlopi_settings_t** head, l_ezlopi_settings_t* setting) 
-{
-    if (*head == NULL) 
-    {
-        *head = setting;
-    } 
-    else 
-    {
-        l_ezlopi_settings_t* current = *head;
-        while (current->next != NULL) 
-        {
-            current = current->next;
+    for (size_t i = 0; i < ezlopi_settings_get_settings_count(); i++) {
+        if (strcmp(ezlopi_settings_list[i].name, name) == 0) {
+            switch (ezlopi_settings_list[i].value_type) {
+                case EZLOPI_SETTINGS_TYPE_TOKEN:
+                    *((const char**)value) = ezlopi_settings_list[i].value.token_value;
+                    break;
+                case EZLOPI_SETTINGS_TYPE_BOOL:
+                    *((bool*)value) = ezlopi_settings_list[i].value.bool_value;
+                    break;
+                case EZLOPI_SETTINGS_TYPE_INT:
+                    *((int*)value) = ezlopi_settings_list[i].value.int_value;
+                    break;
+                default:
+                    break;                    
+            }
+            break;
         }
-        current->next = setting;
     }
 }
 
-void ezlopi_settings_modify_setting(l_ezlopi_settings_t* head, const char* setting_name, void* new_value) 
-{
+// Function to print the settings in JSON format
+void ezlopi_settings_print_settings() {
+    printf("{\n");
+    printf("  \"settings\": [\n");
 
-    l_ezlopi_settings_t* current = head;
-    
-    while (current != NULL)
-    {
-        if (strcmp(current->settings_name, setting_name) == 0) 
-        {
-            current->settings_value = new_value;
-        }
-        current = current->next;
-    }
-}
-
-void ezlopi_settings_get_setting(l_ezlopi_settings_t* head, const char* setting_name, void ** get_value) 
-{
-
-    l_ezlopi_settings_t* current = head;
-    
-    while (current != NULL)
-    {
-        if (strcmp(current->settings_name, setting_name) == 0) 
-        {
-            *get_value = current->settings_value;
-            return;         
-        }
-        current = current->next;
-    }
-
-    *get_value = NULL;
-}
-
-// Function to free the memory used by the linked list
-void ezlopi_settings_free_settings(l_ezlopi_settings_t** head) 
-{
-    l_ezlopi_settings_t* current = *head;
-    while (current != NULL) 
-    {
-        l_ezlopi_settings_t* next = current->next;
-        free(current);
-        current = next;
-    }
-    *head = NULL;
-}
-
-// Function to print the settings
-void ezlopi_settings_print_settings(const l_ezlopi_settings_t* head) 
-{
-    TRACE_D("################################# Settings:\n ######################################## ");
-    const l_ezlopi_settings_t* current = head;
-    while (current != NULL) 
-    {
-        TRACE_D("Name: %s\n", current->settings_name);
-        TRACE_D("Value: ");
-
-        if (current->settings_is_enum) 
-        {
-            const char* enumValue = (const char*)current->settings_value;
-            TRACE_D("%s\n", enumValue);
-        } 
-        else if (strcmp(current->settings_value_type, "bool") == 0) 
-        {
-            bool boolValue = *((bool*)current->settings_value);
-            TRACE_D("%s\n", boolValue ? "true" : "false");
-        }
-        else if (strcmp(current->settings_value_type, "int") == 0) 
-        {
-            int intValue = *((int*)current->settings_value);
-            TRACE_D("%d\n", intValue);
-        } 
-        else if (strcmp(current->settings_value_type, "float") == 0)
-        {
-            float floatValue = *((float*)current->settings_value);
-            TRACE_D("%f\n", floatValue);
-        } 
-        else 
-        {
-            TRACE_D("Unknown settings_value type\n");
-        }
-
-        if (current->settings_is_enum) 
-        {
-            TRACE_D("Enum Values:\n");
-            for (uint16_t j = 0; j < current->settings_enum_count; j++) 
-            {
-                const char* enumItem = ((const char**)current->settings_enum_values)[j];
-                TRACE_D("%s\n", enumItem);
+    for (size_t i = 0; i < ezlopi_settings_get_settings_count(); i++) {
+        printf("    {\n");
+        printf("      \"enum\": [\n");
+        if (ezlopi_settings_list[i].enum_values[0] != NULL) {
+            for (size_t j = 0; j < EZLOPI_SETTINGS_MAX_ENUM_VALUES && ezlopi_settings_list[i].enum_values[j] != NULL; j++) {
+                printf("        \"%s\"", ezlopi_settings_list[i].enum_values[j]);
+                if (j < EZLOPI_SETTINGS_MAX_ENUM_VALUES - 1 && ezlopi_settings_list[i].enum_values[j + 1] != NULL) {
+                    printf(",");
+                }
+                printf("\n");
             }
         }
-        current = current->next;
+        printf("      ],\n");
+        printf("      \"name\": \"%s\",\n", ezlopi_settings_list[i].name);
+        printf("      \"value\": ");
+        switch (ezlopi_settings_list[i].value_type) {
+            case EZLOPI_SETTINGS_TYPE_TOKEN:
+                printf("\"%s\",\n", ezlopi_settings_list[i].value.token_value);
+                break;
+            case EZLOPI_SETTINGS_TYPE_BOOL:
+                printf("%s,\n", ezlopi_settings_list[i].value.bool_value ? "true" : "false");
+                break;
+            case EZLOPI_SETTINGS_TYPE_INT:
+                printf("%d,\n", ezlopi_settings_list[i].value.int_value);
+                break;
+            default:
+                break;                
+        }
+        printf("      \"valueType\": \"%s\"\n", ezlopi_settings_list[i].value_type == EZLOPI_SETTINGS_TYPE_INT ? "int" : "token");
+        printf("    }%s\n", i < sizeof(ezlopi_settings_list) / sizeof(ezlopi_settings_list[0]) - 1 ? "," : "");
     }
+
+    printf("  ]\n");
+    printf("}\n");
 }
 
+void ezlopi_initialize_settings(void) {
+
+    #if 0
+
+    ezlopi_settings_print_settings();
+    printf("---------------------------------------------------------------------------------");
+    // Modify a setting
+    const char* newTokenValue = "ddmmyy";
+    ezlopi_settings_modify_setting("date.format", newTokenValue);
+    bool bool_val = true;
+    const bool* newBoolValue = &bool_val;
+    ezlopi_settings_modify_setting("logs.color", &newBoolValue);
+    ezlopi_settings_print_settings();
+    printf("---------------------------------------------------------------------------------");
+    // Read a setting
+    bool boolValue;
+    ezlopi_settings_read_setting("logs.color", &boolValue);
+    printf("\nlogs.color: %s\n", boolValue ? "true" : "false");
+    ezlopi_settings_read_setting("date.format", &newTokenValue);
+    printf("\ndate.format: %s\n", newTokenValue);
+    int val_int = 0;
+    ezlopi_settings_read_setting("some_integer_value", &val_int);
+    printf("\nsome_integer_value: %d\n", val_int);    
+    printf("---------------------------------------------------------------------------------");
+    // Print settings in JSON format
+    ezlopi_settings_print_settings(); 
+
+    #endif 
+    ezlopi_settings_save_settings(ezlopi_settings_list, ezlopi_settings_get_settings_count());
+    ezlopi_settings_print_settings();
+    ezlopi_settings_retrive_settings(ezlopi_settings_list, ezlopi_settings_get_settings_count());
+    ezlopi_settings_print_settings();
+
+    // if(EZLOPI_SETTINGS_INITI_STATUS_FALSE == ezlopi_nvs_get_settings_init_status())
+    // {
+    //     ezlopi_settings_save_settings(ezlopi_settings_list, ezlopi_settings_get_settings_count());
+    //     // ezlopi_settings_print_settings(settings_list);
+    //     ezlopi_nvs_set_settings_init_status();
+    // }
+        
+    // if(EZLOPI_SETTINGS_INITI_STATUS_TRUE == ezlopi_nvs_get_settings_init_status()) 
+    // {
+    //     ezlopi_settings_retrive_settings(ezlopi_settings_list, ezlopi_settings_get_settings_count());
+    // }
+
+
+}
+
+#if 0
 void ezlopi_initialize_settings(void) 
 {
 
@@ -271,3 +229,4 @@ void ezlopi_initialize_settings(void)
 
     return 0;
 }
+#endif 
