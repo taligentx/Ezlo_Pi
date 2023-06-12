@@ -317,9 +317,12 @@ char *ezlopi_factory_info_v2_get_ezlopi_config(void)
         g_ezlopi_config = ezlopi_factory_info_v2_read_string(EZLOPI_CONFIG_OFFSET, EZLOPI_CONFIG_LENGTH);
     }
     return g_ezlopi_config;
+#elif (EZLOPI_DEVICE_TYPE_AMBIENT_TRACKER_PRO == EZLOPI_DEVICE_TYPE)
+    return ambient_tracker_constant_config;
 #elif (EZLOPI_DEVICE_TYPE_IR_BLASTER == EZLOPI_DEVICE_TYPE)
     return ir_blaster_constant_config;
 #endif
+    return NULL;
 }
 
 #if 0

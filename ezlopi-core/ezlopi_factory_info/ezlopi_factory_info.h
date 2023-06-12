@@ -388,21 +388,37 @@ static const char *switch_box_constant_config =
             }\
         ],\
     \"dev_total\": 1}";
+#elif (EZLOPI_DEVICE_TYPE_AMBIENT_TRACKER_PRO == EZLOPI_DEVICE_TYPE)
+static const char *ambient_tracker_constant_config =
+    "{\
+        \"cmd\": 3,\
+        \"dev_detail\":\
+        [\
+            {\
+               \"dev_name\": \"BME680\",\
+               \"dev_type\": 8,\
+               \"id_item\": 10,\
+               \"id_room\": \"\",\
+               \"gpio_scl\": 17,\
+               \"gpio_sda\": 18\
+            }\
+        ],\
+        \"dev_total\": 1}";
 #elif (EZLOPI_DEVICE_TYPE_TEST_DEVICE == EZLOPI_DEVICE_TYPE)
 static const char *test_device_constant_config =
     "{\
         \"cmd\": 3,\
         \"dev_detail\":\
         [\
-            {\
-                \"dev_type\": 10,\
-                \"dev_name\": \"HCSR04 Ultrasonic\",\
+             {\
+                \"dev_name\": \"Backlight Control\",\
+                \"dev_type\": 5,\
+                \"gpio\": 47,\
+                \"id_item\": 9,\
                 \"id_room\": \"\",\
-                \"id_item\": 24,\
-                \"gpio1\": 1,\
-                \"gpio2\": 2,\
-                \"en_gpio1\": true,\
-                \"en_gpio2\": true\
+                \"pwm_resln\": 8,\
+                \"freq_hz\": 50,\
+                \"duty_cycle\": 0\
             }\
         ],\
     \"dev_total\": 1}";

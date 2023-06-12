@@ -52,6 +52,7 @@
 #define EZLOPI_SENSOR_0034_DIGITAL_IN_PROXIMITY                         34
 #define EZLOPI_SENSOR_0035_DIGITAL_IN_TPP223B_TOUCH_SENSOR              35
 #define EZLOPI_DEVICE_0036_PWM_SERVO_MG996R                             36
+#define EZLOPI_SENSOR_0037_DIGITAL_OUTPUT_PMS5003_GPIO                  37
 
 /**
  * @brief defining the type of sensor call function

@@ -8,7 +8,11 @@
 #include "sensor_0005_I2C_MPU6050.h"
 #include "sensor_0006_I2C_ADXL345.h"
 // TODO Include for 0007 - 0011
+#include "sensor_0008_I2C_LTR303ALS.h"
+#include "device_0009_other_RMT_SK6812.h"
+#include "sensor_0010_I2C_BME680.h"
 #include "sensor_0012_I2C_BME280.h"
+#include "sensor_0014_UART_PMS5003.h"
 #include "sensor_0019_digitalIn_PIR.h"
 #include "sensor_0018_internal_hall_effect.h"
 #include "device_0022_PWM_dimmable_lamp.h"
@@ -74,61 +78,61 @@ static s_ezlopi_device_t device_array[] = {
         },
     #endif
 
-    #ifdef EZLOLPI_SENSOR_0006_I2C_ADXL345
+    #ifdef EZLOPI_SENSOR_0006_I2C_ADXL345
         {
-            .id = EZLOLPI_SENSOR_0006_I2C_ADXL345,
+            .id = EZLOPI_SENSOR_0006_I2C_ADXL345,
             .func = sensor_0006_I2C_ADXL345
         },
     #endif
 
-    // #ifdef EZLOLPI_SENSOR_0007_I2C_GY271
+    // #ifdef EZLOPI_SENSOR_0007_I2C_GY271
     //     {
-    //         .id = EZLOLPI_SENSOR_0007_I2C_GY271,
+    //         .id = EZLOPI_SENSOR_0007_I2C_GY271,
     //         .func = 
     //     },
     // #endif
-    // #ifdef EZLOLPI_SENSOR_0008_I2C_LTR303AL
+    #ifdef EZLOPI_SENSOR_0008_I2C_LTR303AL
+        {
+            .id = EZLOPI_SENSOR_0008_I2C_LTR303AL,
+            .func = sensor_0008_I2C_LTR303ALS
+        },
+    #endif    
+    #ifdef EZLOPI_DEVICE_0009_OTHER_RMT_SK6812
+        {
+            .id = EZLOPI_DEVICE_0009_OTHER_RMT_SK6812,
+            .func = device_0009_other_RMT_SK6812,
+        },
+    #endif
+    #ifdef EZLOPI_SENSOR_0010_I2C_BME680
+        {
+            .id = EZLOPI_SENSOR_0010_I2C_BME680,
+            .func = sensor_0010_I2C_BME680
+        },
+    #endif       
+    // #ifdef EZLOPI_SENSOR_0011_I2C_MAX30100
     //     {
-    //         .id = EZLOLPI_SENSOR_0008_I2C_LTR303AL,
-    //         .func = 
-    //     },
-    // #endif    
-    // #ifdef EZLOLPI_DEVICE_0009_OTHER_RMT_SK6812
-    //     {
-    //         .id = EZLOLPI_DEVICE_0009_OTHER_RMT_SK6812,
-    //         .func = 
-    //     },
-    // #endif      
-    // #ifdef EZLOLPI_SENSOR_0010_I2C_BME680
-    //     {
-    //         .id = EZLOLPI_SENSOR_0010_I2C_BME680,
-    //         .func = 
-    //     },
-    // #endif       
-    // #ifdef EZLOLPI_SENSOR_0011_I2C_MAX30100
-    //     {
-    //         .id = EZLOLPI_SENSOR_0011_I2C_MAX30100,
+    //         .id = EZLOPI_SENSOR_0011_I2C_MAX30100,
     //         .func = 
     //     },
     // #endif     
-    #ifdef EZLOPI_SENSOR_0012_I2C_BME280
-        {
-            .id = EZLOPI_SENSOR_0012_I2C_BME280,
-            .func = sensor_0012_I2C_BME280,
-        },
-    #endif    
+    // #ifdef EZLOPI_SENSOR_0012_I2C_BME280
+    //     {
+    //         .id = EZLOPI_SENSOR_0012_I2C_BME280,
+    //         .func = sensor_0012_I2C_BME280,
+    //     },
+    // #endif    
     // #ifdef EZLOPI_SENSOR_0013_SPI_BME280
     //     {
     //         .id = EZLOPI_SENSOR_0013_SPI_BME280,
-    //         .func = 
+    //         .func = ,
     //     },
     // #endif       
-    // #ifdef EZLOPI_SENSOR_0014_UART_PMS5003
-    //     {
-    //         .id = EZLOPI_SENSOR_0014_UART_PMS5003,
-    //         .func = 
-    //     },
-    // #endif   
+    #ifdef EZLOPI_SENSOR_0014_UART_PMS5003
+        {
+            .id = EZLOPI_SENSOR_0014_UART_PMS5003,
+            .func = sensor_0014_UART_PMS5003
+        },
+    #endif   
     // #ifdef EZLOPI_SENSOR_0015_ONE_WIRE_DHT11
     //     {
     //         .id = EZLOPI_SENSOR_0015_ONE_WIRE_DHT11,
@@ -277,7 +281,12 @@ static s_ezlopi_device_t device_array[] = {
             .func = device_0036_PWM_servo_MG996R,
         },
     #endif
-
+    #ifdef EZLOPI_SENSOR_0037_DIGITAL_OUTPUT_PMS5003_GPIO
+    {
+        .id = EZLOPI_SENSOR_0037_DIGITAL_OUTPUT_PMS5003_GPIO,
+        .func = sensor_0014_UART_PMS5003,
+    },
+    #endif
 #elif (EZLOPI_DEVICE_TYPE_SWITCH_BOX == EZLOPI_DEVICE_TYPE)
     #ifdef EZLOPI_DEVICE_0001_DIGITAL_OUT_LED
         {
@@ -291,8 +300,31 @@ static s_ezlopi_device_t device_array[] = {
             .func = gxhtc3_rh_t_sensor,
         },
     #endif
-
-#else
+#elif (EZLOPI_DEVICE_TYPE_AMBIENT_TRACKER_PRO == EZLOPI_DEVICE_TYPE)
+    // #ifdef EZLOPI_DEVICE_0009_OTHER_RMT_SK6812
+    //     {
+    //         .id = EZLOPI_DEVICE_0009_OTHER_RMT_SK6812,
+    //         .func = 
+    //     },
+    // #endif
+    #ifdef EZLOPI_SENSOR_0010_I2C_BME680
+        {
+            .id = EZLOPI_SENSOR_0010_I2C_BME680,
+            .func = sensor_0010_I2C_BME680
+        },
+    #endif       
+    // #ifdef EZLOPI_SENSOR_0014_UART_PMS5003
+    //     {
+    //         .id = EZLOPI_SENSOR_0014_UART_PMS5003,
+    //         .func = sensor_0014_UART_PMS5003
+    //     },
+    // #endif
+    // #ifdef EZOPI_SENSOR_0008_I2C_LTR303AL
+    //     {
+    //         .id = EZLOPI_SENSOR_0008_I2C_LTR303AL,
+    //         .func = 
+    //     },
+    // #endif  
 #endif
 
     /**
