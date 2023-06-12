@@ -2,10 +2,8 @@
 #define EZLOPI_SETTINGS_H
 
 #include <stdbool.h>
-typedef enum {
-    EZLOPI_SETTINGS_INITI_STATUS_TRUE,
-    EZLOPI_SETTINGS_INITI_STATUS_FALSE
-} e_ezlopi_settings_init_status_t;
+
+#define     EZLOPI_SETTINGS_MAGIC_NUMBER    (uint32_t)0x457A5069
 
 #define EZLOPI_SETTINGS_MAX_ENUM_VALUES 10
 

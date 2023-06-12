@@ -15,9 +15,9 @@ s_ezlopi_settings_t ezlopi_settings_list[] = {
         .value.token_value = "mmddyy",
         .value_type = EZLOPI_SETTINGS_TYPE_TOKEN
     },
-    {
+        {
         .name = "first_start",
-        .value.bool_value = true,
+        .value.bool_value = false,
         .value_type = EZLOPI_SETTINGS_TYPE_BOOL
     },
     {
@@ -28,17 +28,24 @@ s_ezlopi_settings_t ezlopi_settings_list[] = {
     }
 };
 
-s_ezlopi_settings_t *ezlopi_settings_get_settings_list(void)
-{
-    return ezlopi_settings_list;
-}
+s_ezlopi_settings_t ezlopi_settings_list_ii[] = {
+    {
+        .enum_values = {"mmddyy", "ddmmyy"},
+        .name = "date.format",        
+        .value_type = EZLOPI_SETTINGS_TYPE_TOKEN
+    },
+    {
+        .name = "first_start",
+        .value_type = EZLOPI_SETTINGS_TYPE_BOOL
+    },
+    {
+        .enum_values = {"12", "24"},
+        .name = "time.format",
+        .value_type = EZLOPI_SETTINGS_TYPE_TOKEN
+    }
+};
 
-uint16_t ezlopi_settings_get_settings_count(void) 
-{
-    return sizeof(ezlopi_settings_list) / sizeof(ezlopi_settings_list[0]);
-}
-
-void ezlopi_settings_modify_setting(const char* name, const void* value) 
+static void modify_setting(const char* name, const void* value)
 {
     for (size_t i = 0; i < ezlopi_settings_get_settings_count(); i++) 
     {
@@ -63,8 +70,8 @@ void ezlopi_settings_modify_setting(const char* name, const void* value)
     }
 }
 
-// Function to read the value of a single setting
-void ezlopi_settings_read_setting(const char* name, void* value) 
+
+static void read_setting(const char* name, void* value) 
 {
     for (size_t i = 0; i < ezlopi_settings_get_settings_count(); i++) {
         if (strcmp(ezlopi_settings_list[i].name, name) == 0) {
@@ -87,7 +94,7 @@ void ezlopi_settings_read_setting(const char* name, void* value)
 }
 
 
-void ezlopi_settings_print_settings(const s_ezlopi_settings_t *settings_list, size_t num_settings) {
+static void print_settings(const s_ezlopi_settings_t *settings_list, size_t num_settings) {
     cJSON *root = cJSON_CreateArray();
 
     for (size_t i = 0; i < num_settings; i++) {
@@ -121,22 +128,98 @@ void ezlopi_settings_print_settings(const s_ezlopi_settings_t *settings_list, si
     cJSON_Delete(root);
 }
 
+s_ezlopi_settings_t *ezlopi_settings_get_settings_list(void)
+{
+    return ezlopi_settings_list;
+}
 
-void ezlopi_initialize_settings(void) {
+uint16_t ezlopi_settings_get_settings_count(void) 
+{
+    return sizeof(ezlopi_settings_list) / sizeof(ezlopi_settings_list[0]);
+}
 
-
-    if(EZLOPI_SETTINGS_INITI_STATUS_FALSE == ezlopi_nvs_get_settings_init_status())
+int ezlopi_settings_modify_setting(const char* name, const void* value)
+{
+    int ret = 1;
+    modify_setting(name, value);
+    if(ezlopi_settings_save_settings(ezlopi_settings_list, ezlopi_settings_get_settings_count()))  
     {
-        ezlopi_settings_save_settings(ezlopi_settings_list, ezlopi_settings_get_settings_count());
-        ezlopi_settings_print_settings(ezlopi_settings_list, ezlopi_settings_get_settings_count());
-        ezlopi_nvs_set_settings_init_status();
+        TRACE_D("Seetings modified, Setting name: %s", name);
     }
-        
-    if(EZLOPI_SETTINGS_INITI_STATUS_TRUE == ezlopi_nvs_get_settings_init_status()) 
+    else 
     {
-        ezlopi_settings_retrive_settings(ezlopi_settings_list, ezlopi_settings_get_settings_count());
-        ezlopi_settings_print_settings(ezlopi_settings_list, ezlopi_settings_get_settings_count());
+        TRACE_E("Failed settings modification, Setting name: %s", name);
+        ret = 0;
     }
+
+    print_settings(ezlopi_settings_list, ezlopi_settings_get_settings_count());     
+    return ret;
+}
+
+uint8_t ezlopi_settings_read_setting(const char* name, void* value)
+{    
+    int ret = 0;
+
+    if(ezlopi_nvs_get_settings_init_status()) 
+    {
+        if(ezlopi_settings_retrive_settings(ezlopi_settings_list, ezlopi_settings_get_settings_count()))
+        {
+            read_setting(name, value);
+            TRACE_D("Seetings retrived from NVS.");
+            ret = 1;
+        }
+        else
+        {
+            TRACE_E("Failed retriving settings %s from NVS!", name);
+            ret = 0;
+        }
+    }
+    return ret;
+}
+
+void ezlopi_initialize_settings(void) 
+{
+    if(!ezlopi_nvs_get_settings_init_status())
+    {
+        if(ezlopi_settings_save_settings(ezlopi_settings_list, ezlopi_settings_get_settings_count()))  
+        {
+            if(ezlopi_nvs_set_settings_init_status()) 
+            {
+                TRACE_D("Seetings Initialized to NVS.");
+            } 
+            else 
+            {
+                TRACE_E("Failed saving settings status to NVS!");
+            }
+        }
+        else 
+        {
+            TRACE_E("Failed saving settings to NVS!");
+        }
+
+        print_settings(ezlopi_settings_list, ezlopi_settings_get_settings_count());               
+    }
+    
+    if(ezlopi_nvs_get_settings_init_status()) 
+    {
+        if(ezlopi_settings_retrive_settings(ezlopi_settings_list, ezlopi_settings_get_settings_count()))
+        {
+            TRACE_D("Seetings retrived from NVS.");
+            print_settings(ezlopi_settings_list, ezlopi_settings_get_settings_count());
+        }
+        else
+        {
+            TRACE_E("Failed retriving settings from NVS!");
+        }
+    }
+    void *str_val = NULL;
+    bool bool_val;
+    // bool *int_val = NULL;
+    ezlopi_settings_read_setting("date.format", (void *)&str_val);
+    TRACE_D("Seetings, \"date.format\" : %s", (const char *)str_val);
+    ezlopi_settings_read_setting("first_start", (void *)&bool_val);
+    TRACE_D("Seetings, \"first_start\" : %s", bool_val ? "TRUE" : "FALSE");    
+
 
 }
 

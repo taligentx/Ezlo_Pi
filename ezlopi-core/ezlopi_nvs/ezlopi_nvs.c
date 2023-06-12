@@ -16,7 +16,7 @@ static const char *user_id_nvs_name = "user_id";
 static const char *wifi_info_nvs_name = "wifi_info";
 static const char *boot_count_nvs_name = "boot_count";
 static const char *provisioning_status_nvs_name = "prov_stat";
-static const char *settings_initialized_status_name = "settings_status";
+static const char *settings_initialized_status_name = "settings_magic";
 
 static char *ezlopi_nvs_read_str(char *nvs_name);
 static int ezlopi_nvs_write_str(char *data, uint32_t len, char *nvs_name);
@@ -255,32 +255,42 @@ uint32_t ezlopi_nvs_get_boot_count(void)
 }
 
 uint8_t ezlopi_nvs_get_settings_init_status(void) {
-    uint8_t settings_init_status = 0;
+    uint8_t ret = 0;
+    uint32_t ezlopi_settings_magic_number = 0; 
     if (ezlopi_nvs_handle)
     {
-        esp_err_t err = nvs_get_u8(ezlopi_nvs_handle, settings_initialized_status_name, &settings_init_status);
-        if (ESP_OK != err)
+        esp_err_t err = nvs_get_u32(ezlopi_nvs_handle, settings_initialized_status_name, &ezlopi_settings_magic_number);
+        if (ESP_OK == err)
         {
-            TRACE_W("nvs_get_u8 - error: %s", esp_err_to_name(err));
+            if(EZLOPI_SETTINGS_MAGIC_NUMBER == ezlopi_settings_magic_number) {
+                ret = 1;
+            }
+        } 
+        else
+        {
+            TRACE_W("nvs_get_u32 - error: %s", esp_err_to_name(err));
         }
     }
-
-    return settings_init_status;
+    return ret;
 }
 
-void ezlopi_nvs_set_settings_init_status(void) {
-    uint8_t settings_init_status = 1;
+uint8_t ezlopi_nvs_set_settings_init_status(void) {    
+    uint8_t ret = 0;
     if (ezlopi_nvs_handle)
     {
-        esp_err_t err = nvs_set_u8(ezlopi_nvs_handle, settings_initialized_status_name, settings_init_status);
+        esp_err_t err = nvs_set_u32(ezlopi_nvs_handle, settings_initialized_status_name, EZLOPI_SETTINGS_MAGIC_NUMBER);
         if (ESP_OK != err)
         {
-            TRACE_W("nvs_set_u8 - error: %s", esp_err_to_name(err));
+            TRACE_W("nvs_set_u32 - error: %s", esp_err_to_name(err));
         }
-    }
+        else
+        {
+            ret = 1;
+        }
+    }    
+    return ret;
 }
 
-#if 1
 int ezlopi_settings_save_settings(const s_ezlopi_settings_t * settings_list, uint16_t num_settings)
 {
     int ret = 1;
@@ -432,7 +442,6 @@ int ezlopi_settings_retrive_settings(s_ezlopi_settings_t * settings_list, uint16
 
     return ret;
 }
-#endif 
 
 static int ezlopi_nvs_write_str(char *data, uint32_t len, char *nvs_name)
 {
@@ -480,8 +489,7 @@ static char *ezlopi_nvs_read_str(char *nvs_name)
         err = nvs_get_str(ezlopi_nvs_handle, nvs_name, NULL, &buf_len_needed);
         TRACE_I("NVS Handle: %d", ezlopi_nvs_handle);
         TRACE_I("Key Name: %s", nvs_name);
-        TRACE_I("NVS get string status %s", esp_err_to_name(err));
-        // TRACE_I("buf_len_needed: %d", buf_len_needed);
+        TRACE_E("NVS get string status %s", esp_err_to_name(err));
         
         if (buf_len_needed && (ESP_OK == err))
         {
