@@ -148,7 +148,7 @@ static s_ezlopi_device_properties_t *sensor_i2c_accelerometer_prepare_properties
 
             sensor_i2c_accelerometer_properties->interface.i2c_master.enable = true;
             sensor_i2c_accelerometer_properties->interface.i2c_master.clock_speed = 100000;
-            sensor_i2c_accelerometer_properties->interface.i2c_master.address = SLAVE_ADDR;
+            sensor_i2c_accelerometer_properties->interface.i2c_master.address = ADXL345_ADDR;
         }
     }
     return sensor_i2c_accelerometer_properties;

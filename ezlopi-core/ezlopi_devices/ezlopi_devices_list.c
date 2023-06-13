@@ -7,7 +7,7 @@
 // TODO add include for 004
 #include "sensor_0005_I2C_MPU6050.h"
 #include "sensor_0006_I2C_ADXL345.h"
-// TODO Include for 0007 - 0011
+#include "sensor_0007_I2C_GY271.h"
 #include "sensor_0012_I2C_BME280.h"
 #include "sensor_0016_oneWire_DHT22.h"
 #include "sensor_0017_ADC_potentiometer.h"
@@ -71,12 +71,11 @@ static s_ezlopi_device_t device_array[] = {
      .func = sensor_0006_I2C_ADXL345},
 #endif
 
-// #ifdef EZLOPI_SENSOR_0007_I2C_GY271
-//     {
-//         .id = EZLOPI_SENSOR_0007_I2C_GY271,
-//         .func =
-//     },
-// #endif
+#ifdef EZLOPI_SENSOR_0007_I2C_GY271
+    {.id = EZLOPI_SENSOR_0007_I2C_GY271,
+     .func = sensor_0007_I2C_GY271},
+#endif
+
 // #ifdef EZLOPI_SENSOR_0008_I2C_LTR303AL
 //     {
 //         .id = EZLOPI_SENSOR_0008_I2C_LTR303AL,

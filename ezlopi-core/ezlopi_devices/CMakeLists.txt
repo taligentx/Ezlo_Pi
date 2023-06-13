@@ -22,6 +22,7 @@ idf_component_register(
         device_0003_digitalOut_plug
         sensor_0005_I2C_MPU6050
         sensor_0006_I2C_ADXL345
+        sensor_0007_I2C_GY271
         sensor_0012_I2C_BME280
         sensor_0016_oneWire_DHT22
         sensor_0017_ADC_potentiometer
