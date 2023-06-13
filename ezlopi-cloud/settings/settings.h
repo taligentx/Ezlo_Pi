@@ -11,6 +11,9 @@ extern "C"
 #endif
 
     void settings_list(cJSON *cj_request, cJSON *cj_response);
+    void settings_value_set(cJSON *cj_request, cJSON *cj_response);
+    void settings_value_set_response(cJSON *cj_request, cJSON *cj_response);
+    void settings_updated(cJSON *cj_request, cJSON *cj_response);
 
 #ifdef __cplusplus
 }

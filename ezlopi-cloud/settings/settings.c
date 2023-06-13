@@ -73,3 +73,54 @@ void settings_list(cJSON *cj_request, cJSON *cj_response) {
         }
     }
 }
+
+void settings_value_set(cJSON *cj_request, cJSON *cj_response)
+{
+    cJSON_AddItemReferenceToObject(cj_response, ezlopi_id_str, cJSON_GetObjectItem(cj_request, ezlopi_id_str));
+    cJSON_AddItemReferenceToObject(cj_response, ezlopi_key_method_str, cJSON_GetObjectItem(cj_request, ezlopi_key_method_str));
+
+    cJSON *cj_params = cJSON_GetObjectItem(cj_request, "params");
+    if (cj_params)
+    {
+        char *settings_name = NULL;
+        
+        CJSON_GET_VALUE_STRING(cj_params, ezlopi_name_str, settings_name);
+        cJSON* key_settings_value = cJSON_GetObjectItem(cj_params, ezlopi_value_str);
+        
+        if (cJSON_IsBool(key_settings_value)) 
+        {
+            bool settings_val_bool;
+            cJSON_bool _settings_val_bool = cJSON_IsTrue(key_settings_value);
+            settings_val_bool = _settings_val_bool ? true : false;
+            ezlopi_settings_modify_setting(settings_name, &settings_val_bool);
+                       
+        }
+        else if(cJSON_IsNumber(key_settings_value))
+        {
+            int settings_val_int = (int)cJSON_GetNumberValue(key_settings_value);
+            ezlopi_settings_modify_setting(settings_name, &settings_val_int);
+        }
+        else if(cJSON_IsString(key_settings_value))
+        {
+            char *settings_val_str = cJSON_GetStringValue(key_settings_value);
+            TRACE_W("settings_val_str: %s", settings_val_str);
+            ezlopi_settings_modify_setting(settings_name, settings_val_str);
+
+        }
+        else 
+        {
+
+        }        
+    }
+}
+
+void settings_value_set_response(cJSON *cj_request, cJSON *cj_response)
+{
+    cJSON_AddItemReferenceToObject(cj_response, ezlopi_id_str, cJSON_GetObjectItem(cj_request, ezlopi_id_str));
+    cJSON_AddItemReferenceToObject(cj_response, ezlopi_key_method_str, cJSON_GetObjectItem(cj_request, ezlopi_key_method_str));
+
+    cJSON_AddNullToObject(cj_response, ezlopi_str_error);
+
+    cJSON_AddObjectToObject(cj_response, ezlopi_result);
+   
+}

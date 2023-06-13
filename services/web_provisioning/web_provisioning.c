@@ -102,6 +102,7 @@ static const s_method_list_v2_t method_list_v2[] = {
     {.method_name = "hub.item.value.set", .method = items_set_value, .updater = items_update},
     // {.method_name = "hub.device.name.set", .method = devices_name_set, .updater = NULL},
     // {.method_name = "hub.device.setting.value.set", .method = __rpc_method_notfound, .updater = NULL},
+    {.method_name = "hub.setting.value.set", .method = settings_value_set, .updater = settings_value_set_response},
     {.method_name = "registered", .method = registered, .updater = NULL}, // called only once so its in last
 
     // {.method_name = "hub.feature.status.set", .method = __rpc_method_notfound, .updater = NULL}, // documentation missing

@@ -305,12 +305,12 @@ int ezlopi_settings_save_settings(const s_ezlopi_settings_t * settings_list, uin
                 err = nvs_set_str(ezlopi_nvs_handle, setting->name, setting->value.token_value);
                 if(ESP_OK != err)
                 {
-                    TRACE_E("Error writing string value to NVS for key: %s", setting->name);
+                    TRACE_E("Error writing string value to NVS for key: %s, Value: %s", setting->name, setting->value.token_value);
                     ret = 0;
                 }
                 else 
                 {
-                    TRACE_D("Success writing string value to NVS for key: %s", setting->name);
+                    TRACE_D("Success writing string value to NVS for key: %s, Value: %s", setting->name, setting->value.token_value);
                 }                
             } 
             else if (setting->value_type == EZLOPI_SETTINGS_TYPE_BOOL) 
@@ -318,12 +318,12 @@ int ezlopi_settings_save_settings(const s_ezlopi_settings_t * settings_list, uin
                 err = nvs_set_u8(ezlopi_nvs_handle, setting->name, (uint8_t)setting->value.bool_value);
                 if(ESP_OK != err)
                 {
-                    TRACE_E("Error writing u8 value to NVS for key: %s", setting->name);
+                    TRACE_E("Error writing u8 value to NVS for key: %s, Value: %s", setting->name, setting->value.bool_value ? "True" : "False");
                     ret = 0;
                 }
                 else 
                 {
-                    TRACE_D("Success writing u8 value to NVS for key: %s", setting->name);
+                    TRACE_D("Success writing u8 value to NVS for key: %s, Value: %s", setting->name, setting->value.bool_value ? "True" : "False");
                 }
             }
             else if (setting->value_type == EZLOPI_SETTINGS_TYPE_INT) 
@@ -331,12 +331,12 @@ int ezlopi_settings_save_settings(const s_ezlopi_settings_t * settings_list, uin
                 err = nvs_set_i32(ezlopi_nvs_handle, setting->name, setting->value.int_value);
                 if(ESP_OK != err)
                 {
-                    TRACE_E("Error writing int32 value to NVS for key: %s", setting->name);
+                    TRACE_E("Error writing int32 value to NVS for key: %s, Value: %d", setting->name, setting->value.int_value);
                     ret = 0;
                 }
                 else 
                 {
-                    TRACE_D("Success writing int32 value to NVS for key: %s", setting->name);
+                    TRACE_D("Success writing int32 value to NVS for key: %s, Value: %d", setting->name, setting->value.int_value);
                 }                 
             }
         }
@@ -412,7 +412,7 @@ int ezlopi_settings_retrive_settings(s_ezlopi_settings_t * settings_list, uint16
                     TRACE_D("Success reading uint8 value from NVS for key: %s", setting->name);
                     TRACE_I("settings_name: %s, settings_value: %s", 
                             setting->name, 
-                            setting->value.bool_value ? "true" : "false");                      
+                            setting->value.bool_value ? "True" : "False");                      
                 }                                 
             } else if (setting->value_type == EZLOPI_SETTINGS_TYPE_INT) {
 

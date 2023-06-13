@@ -28,5 +28,7 @@ typedef struct s_ezlopi_settings {
 void ezlopi_initialize_settings(void);
 uint16_t ezlopi_settings_get_settings_count(void);
 s_ezlopi_settings_t *ezlopi_settings_get_settings_list(void);
+uint8_t ezlopi_settings_modify_setting(const char* name, const void* value);
+uint8_t ezlopi_settings_read_setting(const char* name, void* value);
 
 #endif  // EZLOPI_SETTINGS_H
