@@ -59,7 +59,60 @@ static esp_err_t gy271_check_data_ready_INTR(s_ezlopi_device_properties_t *prope
 static void Correct_gy271_data(gy271_raw_data_t *RAW_DATA, gy271_data_t *data_p);
 static void get_gy271_sensor_value(s_ezlopi_device_properties_t *properties, gy271_data_t *data_p);
 
-void Gathering_initial_raw_max_min_values(s_ezlopi_device_properties_t *properties)
+static void Gathering_initial_raw_max_min_values(s_ezlopi_device_properties_t *properties);
+static void Gather_GY271_Calibration_data(void *params);
+//------------------------------------------------------------------------------
+
+int sensor_0007_I2C_GY271(e_ezlopi_actions_t action, s_ezlopi_device_properties_t *properties, void *arg, void *user_arg)
+{
+
+    switch (action)
+    {
+    case EZLOPI_ACTION_PREPARE:
+    {
+        sensor_i2c_gy271_prepare(arg);
+        break;
+    }
+    case EZLOPI_ACTION_INITIALIZE:
+    {
+        sensor_i2c_gy271_init(properties, user_arg);
+        break;
+    }
+    case EZLOPI_ACTION_GET_EZLOPI_VALUE:
+    {
+        sensor_i2c_gy271_get_value_cjson(properties, arg);
+        break;
+    }
+    case EZLOPI_ACTION_NOTIFY_1000_MS:
+    {
+        static uint8_t count = 5;
+        if (count++ > 5)
+        {
+            count = 0;
+            if (calibration_complete)
+            {
+                TRACE_B("..................Calibration Complete.................");
+                ezlopi_device_value_updated_from_device(properties);
+            }
+            else
+            {
+                TRACE_B("..................Calibrating.................\n");
+            }
+        }
+
+        break;
+    }
+    default:
+    {
+        break;
+    }
+    }
+    return 0;
+}
+
+//------------------------------------------------------------------------------
+
+static void Gathering_initial_raw_max_min_values(s_ezlopi_device_properties_t *properties)
 {
     //------------------------------------------------------------------------------
     int x = 0, y = 0, z = 0;
@@ -159,7 +212,7 @@ void Gathering_initial_raw_max_min_values(s_ezlopi_device_properties_t *properti
     //------------------------------------------------------------------------------
 }
 
-void Gather_GY271_Calibration_data(void *params)
+static void Gather_GY271_Calibration_data(void *params)
 {
     s_ezlopi_device_properties_t *properties = (s_ezlopi_device_properties_t *)params;
     vTaskDelay(400); // 4  sec
@@ -217,55 +270,6 @@ void Gather_GY271_Calibration_data(void *params)
 
 //------------------------------------------------------------------------------
 
-int sensor_0007_I2C_GY271(e_ezlopi_actions_t action, s_ezlopi_device_properties_t *properties, void *arg, void *user_arg)
-{
-
-    switch (action)
-    {
-    case EZLOPI_ACTION_PREPARE:
-    {
-        sensor_i2c_gy271_prepare(arg);
-        break;
-    }
-    case EZLOPI_ACTION_INITIALIZE:
-    {
-        sensor_i2c_gy271_init(properties, user_arg);
-        break;
-    }
-    case EZLOPI_ACTION_GET_EZLOPI_VALUE:
-    {
-        sensor_i2c_gy271_get_value_cjson(properties, arg);
-        break;
-    }
-    case EZLOPI_ACTION_NOTIFY_1000_MS:
-    {
-        static uint8_t count = 5;
-        if (count++ > 5)
-        {
-            count = 0;
-            if (calibration_complete)
-            {
-                TRACE_B("..................Calibration Complete.................");
-                ezlopi_device_value_updated_from_device(properties);
-            }
-            else
-            {
-                TRACE_B("..................Calibrating.................\n");
-            }
-        }
-
-        break;
-    }
-    default:
-    {
-        break;
-    }
-    }
-    return 0;
-}
-
-//------------------------------------------------------------------------------
-
 static int sensor_i2c_gy271_prepare(void *arg)
 {
     int ret = 0;
@@ -279,6 +283,9 @@ static int sensor_i2c_gy271_prepare(void *arg)
         ADD_PROPERTIES_DEVICE_LIST(device_id, category_generic_sensor, subcategory_not_defined, ezlopi_item_name_acceleration_y_axis, value_type_int, prep_arg->cjson_device);
         device_id = ezlopi_cloud_generate_device_id();
         ADD_PROPERTIES_DEVICE_LIST(device_id, category_generic_sensor, subcategory_not_defined, ezlopi_item_name_acceleration_z_axis, value_type_int, prep_arg->cjson_device);
+
+        device_id = ezlopi_cloud_generate_device_id();
+        ADD_PROPERTIES_DEVICE_LIST(device_id, category_generic_sensor, subcategory_not_defined, ezlopi_item_name_angle_position, value_type_angle, prep_arg->cjson_device);
 
         device_id = ezlopi_cloud_generate_device_id();
         ADD_PROPERTIES_DEVICE_LIST(device_id, category_temperature, subcategory_not_defined, ezlopi_item_name_temp, value_type_temperature, prep_arg->cjson_device);
@@ -380,7 +387,6 @@ static esp_err_t activate_set_reset_period(s_ezlopi_device_properties_t *propert
     vTaskDelay(10);
     return ESP_OK;
 }
-
 static esp_err_t set_to_measure_mode(s_ezlopi_device_properties_t *properties)
 {
     uint8_t write_byte[] = {GY271_CONTROL_REGISTER_1, GY271_OPERATION_MODE};
@@ -431,6 +437,14 @@ static int sensor_i2c_gy271_get_value_cjson(s_ezlopi_device_properties_t *proper
             cJSON_AddNumberToObject(cjson_properties, "value", Data_value);
             cJSON_AddStringToObject(cjson_properties, "scale", "meter_per_square_second");
         }
+        if (ezlopi_item_name_angle_position == properties->ezlopi_cloud.item_name)
+        {
+            Data_value = (float)(data_val.azimuth);
+            TRACE_I("temperature : %.2f*C", Data_value);
+            cJSON_AddNumberToObject(cjson_properties, "value", (data_val.azimuth));
+            cJSON_AddStringToObject(cjson_properties, "scale", "north_pole_degress");
+        }
+
         if (ezlopi_item_name_temp == properties->ezlopi_cloud.item_name)
         {
             Data_value = (data_val.T);
@@ -503,12 +517,13 @@ static void Correct_gy271_data(gy271_raw_data_t *RAW_DATA, gy271_data_t *data_p)
     // calculate azimuth
     data_p->azimuth = Get_azimuth((float)RAW_DATA->raw_x, (float)RAW_DATA->raw_y);
 
-    TRACE_B("x->%.2f", data_p->X);
-    TRACE_B("y->%.2f", data_p->Y);
-    TRACE_B("z->%.2f", data_p->Z);
-    TRACE_B("T->%.2f *C", data_p->T);
-    TRACE_B("AZI->%d", data_p->azimuth);
+    // TRACE_B("x->%.2f", data_p->X);
+    // TRACE_B("y->%.2f", data_p->Y);
+    // TRACE_B("z->%.2f", data_p->Z);
+    // TRACE_B("T->%.2f *C", data_p->T);
+    // TRACE_B("AZI->%d", data_p->azimuth);
 }
+
 static void get_gy271_sensor_value(s_ezlopi_device_properties_t *properties, gy271_data_t *data_ptr)
 {
     static gy271_raw_data_t RAW_DATA = {0};
