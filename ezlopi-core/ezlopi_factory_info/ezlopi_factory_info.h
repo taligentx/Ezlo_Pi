@@ -411,14 +411,16 @@ static const char *test_device_constant_config =
         \"dev_detail\":\
         [\
              {\
-                \"dev_name\": \"Backlight Control\",\
-                \"dev_type\": 5,\
-                \"gpio\": 47,\
-                \"id_item\": 9,\
+                \"dev_name\": \"RGB LED\",\
+                \"dev_type\": 10,\
+                \"id_item\": 38,\
                 \"id_room\": \"\",\
-                \"pwm_resln\": 8,\
-                \"freq_hz\": 50,\
-                \"duty_cycle\": 0\
+                \"gpio1\": 4,\
+                \"gpio2\": 5,\
+                \"gpio3\": 6,\
+                \"en_gpio1\": true,\
+                \"en_gpio2\": true,\
+                \"en_gpio3\": true\
             }\
         ],\
     \"dev_total\": 1}";

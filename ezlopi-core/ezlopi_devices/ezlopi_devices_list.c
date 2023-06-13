@@ -31,6 +31,7 @@
 #include "sensor_0032_ADC_soilMoisture.h"
 #include "sensor_0031_other_JSNSR04T.h"
 #include "sensor_0017_ADC_potentiometer.h"
+#include "device_0038_digitalOut_RGB.h"
 
 static s_ezlopi_device_t device_array[] = {
 
@@ -285,6 +286,12 @@ static s_ezlopi_device_t device_array[] = {
     {
         .id = EZLOPI_SENSOR_0037_DIGITAL_OUTPUT_PMS5003_GPIO,
         .func = sensor_0014_UART_PMS5003,
+    },
+    #endif
+    #ifdef EZLOPI_DEVICE_0038_DIGITAL_OUTPUT_RGB_LED
+    {
+        .id = EZLOPI_DEVICE_0038_DIGITAL_OUTPUT_RGB_LED,
+        .func = device_0038_digitalOut_RGB,
     },
     #endif
 #elif (EZLOPI_DEVICE_TYPE_SWITCH_BOX == EZLOPI_DEVICE_TYPE)

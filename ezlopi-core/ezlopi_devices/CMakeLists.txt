@@ -47,6 +47,7 @@ idf_component_register(
         sensor_0017_ADC_potentiometer
         sensor_0005_I2C_MPU6050
         sensor_0006_I2C_ADXL345
+        device_0038_digitalOut_RGB
 )
 
 
