@@ -230,7 +230,7 @@ static int ezlopi_sk6812_set_value_cjson(s_ezlopi_device_properties_t *propertie
             CJSON_GET_VALUE_INT(cjson_params, "value", dimmable_value_percentage);
             int dimmable_value = (int)((dimmable_value_percentage * 255) / 100);
             // TRACE_B("dimmable_value_percentage is %d, dimmable_value is %d", dimmable_value_percentage, dimmable_value);
-            previous_brightness = (0 == dimmable_value) ? 0 : previous_brightness;
+            // previous_brightness = (0 == dimmable_value) ? 0 : previous_brightness;
             sk6812_set_brightness(sk6812_strip, dimmable_value);
             sk6812_show(sk6812_strip);
             ezlopi_device_value_updated_from_device(switch_properties);
@@ -291,7 +291,7 @@ static int ezlopi_sk6812_get_value(s_ezlopi_device_properties_t *properties, voi
         }
         else if (ezlopi_item_name_switch == properties->ezlopi_cloud.item_name)
         {
-            properties->interface.gpio.gpio_in.value = (0 == sk6812_strip->brightness) ? false : true;
+            properties->interface.gpio.gpio_in.value = (0 == sk6812_strip->brightness) ? 0 : 1;
             // TRACE_B("gpio in %d, brightness %d", properties->interface.gpio.gpio_in.value, sk6812_strip->brightness);
             cJSON_AddBoolToObject(cjson_properties, "value", properties->interface.gpio.gpio_in.value);
         }

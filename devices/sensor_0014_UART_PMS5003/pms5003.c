@@ -105,10 +105,10 @@ static void pms_timer_callback(void *arg)
   static int sec;
   sec++;
   PMS_sensor_structure_t *pms5003_sensor_structure = (PMS_sensor_structure_t *)arg;
+  // TRACE_B("Sec is %d, PMS_TOTAL_TIME %d", sec, PMS_TOTAL_TIME);
   if (sec <= PMS_ACTIVE_TIME)
   {
-    TRACE_B("HERE!!");
-    TRACE_B("Active status is %d", PMS_CHECK_ACTIVE_STATUS(pmsStatusReg));
+
     if (!PMS_CHECK_ACTIVE_STATUS(pmsStatusReg))
     {
       TRACE_B("set pin is %d", pms5003_sensor_structure->pms_set_pin)
@@ -128,10 +128,11 @@ static void pms_timer_callback(void *arg)
     {
       PMS_SET_SLEEP_STATUS(pmsStatusReg);
       pms5003_sensor_structure->pms_data->available = true;
+      pms_print_data(pms5003_sensor_structure->pms_data);
       pms_sleep_mode(pms5003_sensor_structure->pms_set_pin);
     }
   }
-
+  
   else if (sec > PMS_TOTAL_TIME)
   {
     sec = 0; // Reset

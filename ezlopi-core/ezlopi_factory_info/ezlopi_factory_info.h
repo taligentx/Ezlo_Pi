@@ -410,17 +410,15 @@ static const char *test_device_constant_config =
         \"cmd\": 3,\
         \"dev_detail\":\
         [\
-             {\
-                \"dev_name\": \"RGB LED\",\
+            {\
+                \"dev_name\": \"JSN-SR04T\",\
                 \"dev_type\": 10,\
-                \"id_item\": 38,\
+                \"id_item\": 31,\
                 \"id_room\": \"\",\
-                \"gpio1\": 4,\
-                \"gpio2\": 5,\
-                \"gpio3\": 6,\
+                \"gpio1\": 5,\
+                \"gpio2\": 4,\
                 \"en_gpio1\": true,\
-                \"en_gpio2\": true,\
-                \"en_gpio3\": true\
+                \"en_gpio2\": true\
             }\
         ],\
     \"dev_total\": 1}";

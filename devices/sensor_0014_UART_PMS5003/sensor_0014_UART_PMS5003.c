@@ -65,7 +65,7 @@ int sensor_0014_UART_PMS5003(e_ezlopi_actions_t action, s_ezlopi_device_properti
     }
     case EZLOPI_ACTION_GET_EZLOPI_VALUE:
     {
-        sensor_0014_UART_PMS5003_get_value_cjson(properties, arg);
+        // sensor_0014_UART_PMS5003_get_value_cjson(properties, arg);
         break;
     }
     case EZLOPI_ACTION_NOTIFY_1000_MS:
@@ -237,7 +237,7 @@ static int sensor_0014_UART_PMS5003_get_value_cjson(s_ezlopi_device_properties_t
         }
         if (ezlopi_item_name_particulate_matter_10 == properties->ezlopi_cloud.item_name)
         {
-            // pms5003_sensor_structure->pms_data->pm25_standard = 7.5360;  Dummy value
+            // pms5003_sensor_structure->pms_data->pm25_standard = 7.5360;  // Dummy value
             snprintf(formatted_value, 20, "%.2f", pms5003_sensor_structure->pms_data->pm100_standard);
             cJSON_AddStringToObject(cjson_properties, "valueFormatted", formatted_value);
             cJSON_AddNumberToObject(cjson_properties, "value", pms5003_sensor_structure->pms_data->pm100_standard);
@@ -253,23 +253,29 @@ static int sensor_0014_UART_PMS5003_check_new_data_available_and_update(s_ezlopi
     int ret = 0;
     
     PMS_sensor_structure_t *pms5003_sensor_structure = (PMS_sensor_structure_t *)properties->user_arg;
-    if ((true == pms_is_data_available(pms5003_sensor_structure->pms_data)) && (counter == 0))
+    // TRACE_B("is data available %d", pms_is_data_available(pms5003_sensor_structure->pms_data));
+    if(true == pms_is_data_available(pms5003_sensor_structure->pms_data))
     {
-        TRACE_B("Data available!!");
+        // pms_print_data(pms5003_sensor_structure->pms_data);
         pms_set_data_available_to_false(pms5003_sensor_structure->pms_data);
-        counter = 1;
     }
-    if ((counter != 0) && (counter <= 3))
-    {
-        PM25_AQI_Data *pms5003_data = (PM25_AQI_Data *)pms5003_sensor_structure->pms_data;
-        pms_print_data(pms5003_data);
-        ezlopi_device_value_updated_from_device(properties);
-        counter++;
-    }
-    else if (counter > 3)
-    {
-        counter = 0;
-    }
+    // if ((true == pms_is_data_available(pms5003_sensor_structure->pms_data)) && (counter == 0))
+    // {
+    //     TRACE_B("Data available!!");
+    //     pms_set_data_available_to_false(pms5003_sensor_structure->pms_data);
+    //     counter = 1;
+    // }
+    // if ((counter != 0) && (counter <= 3))
+    // {
+    //     PM25_AQI_Data *pms5003_data = (PM25_AQI_Data *)pms5003_sensor_structure->pms_data;
+    //     pms_print_data(pms5003_data);
+    //     ezlopi_device_value_updated_from_device(properties);
+    //     counter++;
+    // }
+    // else if (counter > 3)
+    // {
+    //     counter = 0;
+    // }
     return ret;
 }
 
