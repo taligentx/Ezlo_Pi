@@ -291,7 +291,7 @@ uint8_t ezlopi_nvs_set_settings_init_status(void) {
     return ret;
 }
 
-int ezlopi_settings_save_settings(const s_ezlopi_settings_t * settings_list, uint16_t num_settings)
+int ezlopi_settings_save_settings(const s_ezlopi_hub_settings_t * settings_list, uint16_t num_settings)
 {
     int ret = 1;
     esp_err_t err = ESP_OK;
@@ -299,7 +299,7 @@ int ezlopi_settings_save_settings(const s_ezlopi_settings_t * settings_list, uin
     {
         for (size_t i = 0; i < num_settings; i++) 
         {
-            const s_ezlopi_settings_t *setting = &settings_list[i];
+            const s_ezlopi_hub_settings_t *setting = &settings_list[i];
             if (setting->value_type == EZLOPI_SETTINGS_TYPE_TOKEN) 
             {
                 err = nvs_set_str(ezlopi_nvs_handle, setting->name, setting->value.token_value);
@@ -350,7 +350,7 @@ int ezlopi_settings_save_settings(const s_ezlopi_settings_t * settings_list, uin
     return ret;
 }
 
-int ezlopi_settings_retrive_settings(s_ezlopi_settings_t * settings_list, uint16_t num_settings)
+int ezlopi_settings_retrive_settings(s_ezlopi_hub_settings_t * settings_list, uint16_t num_settings)
 {
     int ret = 1;
     esp_err_t err = ESP_OK;
@@ -359,7 +359,7 @@ int ezlopi_settings_retrive_settings(s_ezlopi_settings_t * settings_list, uint16
         for (size_t i = 0; i < num_settings; i++) 
         {
 
-            s_ezlopi_settings_t *setting = &settings_list[i];
+            s_ezlopi_hub_settings_t *setting = &settings_list[i];
 
             if (setting->value_type == EZLOPI_SETTINGS_TYPE_TOKEN) {
 

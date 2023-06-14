@@ -14,6 +14,20 @@ typedef enum {
     EZLOPI_SETTINGS_TYPE_MAX
 } e_ezlopi_settings_value_type_t;
 
+typedef struct ezlopi_settings_device_settings_type_action_value {
+    char * text;
+    char * lang_tag;
+} s_ezlopi_settings_device_settings_type_action_value_t;
+typedef struct ezlopi_settings_device_settings_type_rgb_value {
+    uint8_t red;
+    uint8_t green;
+    uint8_t blue;
+} s_ezlopi_settings_device_settings_type_rgb_value_t;
+typedef struct ezlopi_settings_device_settings_type_scalable_value {
+    float value;
+    char * scale;
+} s_ezlopi_settings_device_settings_type_scalable_value_t;
+
 typedef struct s_ezlopi_settings {
     const char* enum_values[EZLOPI_SETTINGS_MAX_ENUM_VALUES];
     const char* name;
@@ -21,13 +35,44 @@ typedef struct s_ezlopi_settings {
         const char* token_value;
         bool bool_value;
         int int_value;
-    } value;
+    } value;    
     e_ezlopi_settings_value_type_t value_type;
-} s_ezlopi_settings_t;
+} s_ezlopi_hub_settings_t;
 
+typedef struct s_ezlopi_device_settings_properties 
+{
+    uint32_t id;
+    uint32_t device_id;
+    char * label;
+    char * description;
+    char * status;
+    char * value_type;
+    char * nvs_alias;
+
+    union {
+        char * string_value;
+        int int_value;
+        bool bool_value;
+        s_ezlopi_settings_device_settings_type_action_value_t * action_value;
+        s_ezlopi_settings_device_settings_type_rgb_value_t * rgb_value;
+        s_ezlopi_settings_device_settings_type_scalable_value_t * scalable_value;
+    } value;
+} s_ezlopi_device_settings_properties_t;
+
+typedef struct l_ezlopi_device_settings
+{
+    void *user_arg;
+    s_ezlopi_device_settings_properties_t *properties;
+    struct l_ezlopi_device_settings *next;
+
+} l_ezlopi_device_settings_t;
+
+int ezlopi_device_setting_add(s_ezlopi_device_settings_properties_t *properties, void *user_arg);
+void ezlopi_device_settings_print_settings(l_ezlopi_device_settings_t *head);
 void ezlopi_initialize_settings(void);
+l_ezlopi_device_settings_t *ezlopi_devices_settings_get_list(void);
 uint16_t ezlopi_settings_get_settings_count(void);
-s_ezlopi_settings_t *ezlopi_settings_get_settings_list(void);
+s_ezlopi_hub_settings_t *ezlopi_settings_get_settings_list(void);
 uint8_t ezlopi_settings_modify_setting(const char* name, const void* value);
 uint8_t ezlopi_settings_read_setting(const char* name, void* value);
 

@@ -9,7 +9,7 @@
 extern "C"
 {
 #endif
-
+    void ezlopi_device_settings_list(cJSON *cj_request, cJSON *cj_response);
     void settings_list(cJSON *cj_request, cJSON *cj_response);
     void settings_value_set(cJSON *cj_request, cJSON *cj_response);
     void settings_value_set_response(cJSON *cj_request, cJSON *cj_response);

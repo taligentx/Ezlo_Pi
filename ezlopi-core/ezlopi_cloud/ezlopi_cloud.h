@@ -31,5 +31,6 @@ uint32_t ezlopi_cloud_generate_device_id(void);
 uint32_t ezlopi_cloud_generate_item_id(void);
 uint32_t ezlopi_cloud_generate_room_id(void);
 uint32_t ezlopi_cloud_generate_gateway_id(void);
+uint32_t ezlopi_cloud_generate_settings_id(void);
 
 #endif // __EZLOPI_CLOUD_H__

@@ -14,16 +14,19 @@
 #include "ezlopi_devices_list.h"
 #include "ezlopi_device_value_updated.h"
 #include "ezlopi_cloud_constants.h"
+#include "ezlopi_settings.h"
 
 static int device_0001_digitalOut_generic_prepare(void *arg);
 static int device_0001_digitalOut_generic_init(s_ezlopi_device_properties_t *properties);
 static int device_0001_digitalOut_generic_get_value_cjson(s_ezlopi_device_properties_t *properties, void *arg);
 static int device_0001_digitalOut_generic_set_value(s_ezlopi_device_properties_t *properties, void *arg);
 static s_ezlopi_device_properties_t *device_0001_digitalOut_generic_item(cJSON *cjson_device);
+static s_ezlopi_device_settings_properties_t *ezlopi_device_settings_broadcast_interval_prepare_properties();
 static void device_0001_digitalOut_generic_write_gpio_value(s_ezlopi_device_properties_t *properties);
 static uint32_t device_0001_digitalOut_generic_read_gpio_value(s_ezlopi_device_properties_t *properties);
 static void device_0001_digitalOut_generic_gpio_interrupt_upcall(s_ezlopi_device_properties_t *properties);
 static void device_0001_digitalOut_generic_toggle_gpio(s_ezlopi_device_properties_t *properties);
+
 
 int device_0001_digitalOut_generic(e_ezlopi_actions_t action, s_ezlopi_device_properties_t *properties, void *arg, void *user_arg)
 {
@@ -137,18 +140,30 @@ static int device_0001_digitalOut_generic_prepare(void *arg)
     cJSON *cjson_device = prep_arg->cjson_device;
 
     s_ezlopi_device_properties_t *device_0001_digitalOut_generic_device_properties = NULL;
-
+    s_ezlopi_device_settings_properties_t * device_settings_0001_digitalOut_generic_device_properties = NULL;
+    TRACE_E(" I am here !");
     if ((NULL == device_0001_digitalOut_generic_device_properties) && (NULL != cjson_device))
     {
+        TRACE_E(" I am here !");
         device_0001_digitalOut_generic_device_properties = device_0001_digitalOut_generic_item(cjson_device);
-        if (device_0001_digitalOut_generic_device_properties)
+
+        device_settings_0001_digitalOut_generic_device_properties = ezlopi_device_settings_broadcast_interval_prepare_properties();
+
+        if (device_0001_digitalOut_generic_device_properties && device_settings_0001_digitalOut_generic_device_properties)
         {
-            if (0 == ezlopi_devices_list_add(prep_arg->device, device_0001_digitalOut_generic_device_properties, NULL))
+            TRACE_E(" I am here !");
+            device_settings_0001_digitalOut_generic_device_properties->device_id = device_0001_digitalOut_generic_device_properties->ezlopi_cloud.device_id;
+
+            if ((0 == ezlopi_devices_list_add(prep_arg->device, device_0001_digitalOut_generic_device_properties, NULL)) ||
+                 (0 == ezlopi_device_setting_add(device_settings_0001_digitalOut_generic_device_properties, NULL)))
             {
-                free(device_0001_digitalOut_generic_device_properties);
+                TRACE_E(" I am here !");
+                // free(device_0001_digitalOut_generic_device_properties);
+                // free(device_settings_0001_digitalOut_generic_device_properties);
             }
             else
             {
+                TRACE_E(" I am here !");
                 ret = 1;
             }
         }
@@ -282,4 +297,21 @@ static s_ezlopi_device_properties_t *device_0001_digitalOut_generic_item(cJSON *
     }
 
     return device_0001_digitalOut_generic_device_properties;
+}
+
+static s_ezlopi_device_settings_properties_t *ezlopi_device_settings_broadcast_interval_prepare_properties(void) 
+{
+    s_ezlopi_device_settings_properties_t * ezlopi_setting_properties = (s_ezlopi_device_settings_properties_t *)malloc(sizeof(s_ezlopi_device_settings_properties_t));
+    
+    if(ezlopi_setting_properties) 
+    {
+        memset(ezlopi_setting_properties, 0, sizeof(s_ezlopi_device_settings_properties_t));
+
+        ezlopi_setting_properties->id = ezlopi_cloud_generate_settings_id();
+        ezlopi_setting_properties->label = "broadcast_interval";
+        ezlopi_setting_properties->description = "Sound Level parameter broadcast properties";
+        ezlopi_setting_properties->value_type = "int";
+        ezlopi_setting_properties->value.int_value = 10;
+    }
+    return ezlopi_setting_properties;
 }

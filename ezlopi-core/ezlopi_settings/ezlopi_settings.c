@@ -8,7 +8,8 @@
 #include "trace.h"
 #include "cJSON.h"
 
-s_ezlopi_settings_t ezlopi_settings_list[] = {
+
+s_ezlopi_hub_settings_t ezlopi_settings_list[] = {
     {
         .enum_values = {"mmddyy", "ddmmyy"},
         .name = "date.format",
@@ -32,6 +33,166 @@ s_ezlopi_settings_t ezlopi_settings_list[] = {
         .value_type = EZLOPI_SETTINGS_TYPE_INT
     }    
 };
+
+s_ezlopi_settings_device_settings_type_action_value_t ezlopi_settings_device_settings_type_action_default_value = 
+{
+    "Reset",
+    "reset_tag"
+};
+
+s_ezlopi_settings_device_settings_type_rgb_value_t s_ezlopi_settings_device_settings_type_rgb_default_value = 
+{
+    0,
+    0,
+    0
+};
+
+s_ezlopi_settings_device_settings_type_scalable_value_t s_ezlopi_settings_device_settings_type_scalable_default_value = 
+{
+    0.0,
+    "celsius"
+};
+
+
+static l_ezlopi_device_settings_t *configured_settings = NULL;
+static l_ezlopi_device_settings_t *ezlopi_device_settings_list_create(s_ezlopi_device_settings_properties_t *properties, void *user_arg);
+
+l_ezlopi_device_settings_t *ezlopi_devices_settings_get_list(void)
+{
+    return configured_settings;
+}
+
+int ezlopi_device_setting_add(s_ezlopi_device_settings_properties_t *properties, void *user_arg)
+{
+    int ret = 0;
+    if (configured_settings)
+    {
+        l_ezlopi_device_settings_t *current_settings = configured_settings;
+
+        while (NULL != current_settings->next)
+        {
+            current_settings = current_settings->next;
+        }
+
+        current_settings->next = ezlopi_device_settings_list_create(properties, user_arg);
+        if (current_settings->next)
+        {
+            ret = 1;
+        }
+    }
+    else
+    {
+        configured_settings = ezlopi_device_settings_list_create(properties, user_arg);
+        if (configured_settings)
+        {
+            ret = 1;
+        }
+    }
+
+    return ret;
+}
+
+static l_ezlopi_device_settings_t *ezlopi_device_settings_list_create(s_ezlopi_device_settings_properties_t *properties, void *user_arg)
+{
+    l_ezlopi_device_settings_t *settings_device_list = (l_ezlopi_device_settings_t *)malloc(sizeof(l_ezlopi_device_settings_t));
+    if (settings_device_list)
+    {
+        memset(settings_device_list, 0, sizeof(l_ezlopi_device_settings_t));
+        settings_device_list->properties = properties;
+        settings_device_list->next = NULL;
+        TRACE_E("Here ");
+        if (user_arg)
+            {
+            settings_device_list->user_arg = user_arg;
+        }
+    } 
+    else 
+    {
+        TRACE_E("Here ");
+    }
+    return settings_device_list;
+}
+
+
+void ezlopi_device_settings_print_settings(l_ezlopi_device_settings_t *head) {
+    l_ezlopi_device_settings_t *current = head;
+
+    if(current == NULL) {
+        TRACE_E("No settings found !");
+        return;
+    }
+
+    while (current != NULL) {
+        s_ezlopi_device_settings_properties_t *properties = current->properties;
+
+        printf("ID: %u\n", properties->id);
+        printf("Device ID: %u\n", properties->device_id);
+        if(properties->label) printf("Label: %s\n", properties->label);
+        if(properties->description) printf("Description: %s\n", properties->description);
+        if(properties->status) printf("Status: %s\n", properties->status);
+        if(properties->value_type) printf("Value Type: %s\n", properties->value_type);
+        if(properties->nvs_alias) printf("NVS Alias: %s\n", properties->nvs_alias);
+
+        // Print value based on value type
+        if (strcmp(properties->value_type, "string") == 0) {
+            printf("String Value: %s\n", properties->value.string_value);
+        } else if (strcmp(properties->value_type, "int") == 0) {
+            printf("Integer Value: %d\n", properties->value.int_value);
+        } else if (strcmp(properties->value_type, "bool") == 0) {
+            printf("Boolean Value: %s\n", properties->value.bool_value ? "true" : "false");
+        } else {
+            printf("Unknown value type\n");
+        }
+
+        current = current->next;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 static void modify_setting(const char* name, const void* value)
 {
@@ -82,7 +243,7 @@ static void read_setting(const char* name, void* value)
 }
 
 
-static void print_settings(const s_ezlopi_settings_t *settings_list, size_t num_settings) {
+static void print_settings(const s_ezlopi_hub_settings_t *settings_list, size_t num_settings) {
     cJSON *root = cJSON_CreateArray();
 
     for (size_t i = 0; i < num_settings; i++) {
@@ -116,7 +277,7 @@ static void print_settings(const s_ezlopi_settings_t *settings_list, size_t num_
     cJSON_Delete(root);
 }
 
-s_ezlopi_settings_t *ezlopi_settings_get_settings_list(void)
+s_ezlopi_hub_settings_t *ezlopi_settings_get_settings_list(void)
 {
     if(ezlopi_nvs_get_settings_init_status()) 
     {

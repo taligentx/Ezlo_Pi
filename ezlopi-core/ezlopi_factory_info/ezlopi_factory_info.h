@@ -17,6 +17,7 @@ extern "C"
 #define EZLOPI_TEST_DEVICE -1
 
 #define EZLOPI_DEVICE_TYPE EZLOPI_GENERIC
+// #define EZLOPI_DEVICE_TYPE EZLOPI_TEST_DEVICE
 
 #include "esp_partition.h"
 #include "frozen.h"
@@ -392,17 +393,21 @@ static const char *test_device_constant_config =
         \"cmd\": 3,\
         \"dev_detail\":\
         [\
-            {\
-                \"dev_type\": 8,\
-                \"dev_name\": \"MPU6050 Sensor\",\
+           {\
+                \"dev_name\": \"Switch 1\",\
+                \"dev_type\": 1,\
+                \"gpio_in\": -1,\
+                \"gpio_out\": 2,\
+                \"id_item\": 1,\
                 \"id_room\": \"\",\
-                \"id_item\": 36,\
-                \"gpio_sda\": 18,\
-                \"gpio_scl\": 19,\
-                \"pullup_scl\": true,\
-                \"pullup_sda\": true,\
-                \"slave_addr\": 105\
-            }\
+                \"ip_inv\": true,\
+                \"is_ip\": false,\
+                \"op_inv\": false,\
+                \"pullup_ip\": true,\
+                \"pullup_op\": true,\
+                \"val_ip\": true,\
+                \"val_op\": false\
+            },\
         ],\
     \"dev_total\": 1}";
 

@@ -9,6 +9,82 @@
 #include "ezlopi_devices_list.h"
 #include "web_provisioning.h"
 
+void ezlopi_device_settings_list(cJSON *cj_request, cJSON *cj_response)
+{
+    cJSON_AddItemReferenceToObject(cj_response, ezlopi_id_str, cJSON_GetObjectItem(cj_request, ezlopi_id_str));
+    cJSON_AddItemReferenceToObject(cj_response, ezlopi_key_method_str, cJSON_GetObjectItem(cj_request, ezlopi_key_method_str));
+
+    cJSON *cj_result = cJSON_AddObjectToObject(cj_response, ezlopi_result);
+    if (cj_result)
+    {
+        cJSON *cj_settings_array = cJSON_AddArrayToObject(cj_result, "settings");
+        if (cj_settings_array)
+        {
+            l_ezlopi_device_settings_t *registered_settings = ezlopi_devices_settings_get_list();
+
+            ezlopi_device_settings_print_settings(registered_settings);
+
+            while(NULL != registered_settings) 
+            {
+                TRACE_E("Here");
+                if(NULL != registered_settings->properties)
+                {
+                    TRACE_E("Here");
+                    cJSON *cj_properties = cJSON_CreateObject();
+                    if (cj_properties)
+                    {
+
+                        TRACE_E("Here");
+                        char tmp_string[64];
+                        snprintf(tmp_string, sizeof(tmp_string), "%08x", registered_settings->properties->id);
+                        cJSON_AddStringToObject(cj_properties, "_id", tmp_string);
+                        snprintf(tmp_string, sizeof(tmp_string), "%08x", registered_settings->properties->device_id);
+                        cJSON_AddStringToObject(cj_properties, "deviceId", tmp_string);
+                        cJSON_AddStringToObject(cj_properties, "label", registered_settings->properties->label);
+                        cJSON_AddStringToObject(cj_properties, "description", registered_settings->properties->description);
+                        cJSON_AddStringToObject(cj_properties, "status", "synced");
+                        cJSON_AddStringToObject(cj_properties, "valueType", registered_settings->properties->value_type);
+                        if(strcmp(registered_settings->properties->value_type, "action") == 0) 
+                        {
+
+                        }
+                        else if(strcmp(registered_settings->properties->value_type, "bool") == 0)
+                        {
+                            // (cj_properties, "value", registered_settings->properties->value.int_value);
+                        }
+                        else if(strcmp(registered_settings->properties->value_type, "int") == 0)
+                        {
+                            cJSON_AddNumberToObject(cj_properties, "value", registered_settings->properties->value.int_value);
+                        }
+                        else if(strcmp(registered_settings->properties->value_type, "string") == 0)
+                        {
+                            cJSON_AddStringToObject(cj_properties, "value", registered_settings->properties->value.string_value);
+                        }
+                        else if(strcmp(registered_settings->properties->value_type, "rgb") == 0)
+                        {
+                            // cJSON_AddNumberToObject(cj_properties, "value", registered_settings->properties->value.rgb_value);
+                        }       
+                        else if(strcmp(registered_settings->properties->value_type, "scalable") == 0)
+                        {
+
+                        }
+                        else 
+                        {
+
+                        }    
+
+                        if (!cJSON_AddItemToArray(cj_settings_array, cj_properties))
+                        {
+                            cJSON_Delete(cj_properties);
+                        }                                                                                       
+                    }
+                }
+                registered_settings = registered_settings->next;
+            }
+        }
+    }    
+}
+
 void settings_list(cJSON *cj_request, cJSON *cj_response) {
 
     
@@ -23,7 +99,7 @@ void settings_list(cJSON *cj_request, cJSON *cj_response) {
         {
 
             // Retrieve the settings list
-            s_ezlopi_settings_t *settings_list = ezlopi_settings_get_settings_list();
+            s_ezlopi_hub_settings_t *settings_list = ezlopi_settings_get_settings_list();
 
             // Calculate the number of settings
             uint16_t num_settings = ezlopi_settings_get_settings_count();
