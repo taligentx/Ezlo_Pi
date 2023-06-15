@@ -545,8 +545,8 @@ static void Write_Correct_gy271_data(gy271_raw_data_t *RAW_DATA, gy271_data_t *s
     sensor_0007_I2C_GY271_data->Z = ((sensor_0007_I2C_GY271_data->calib_factor.calibrated_axis[2]) / GY271_CONVERSION_TO_G);
     sensor_0007_I2C_GY271_data->T = (((float)RAW_DATA->raw_temp) / GY271_TEMPERATURE_SENSITIVITY) + 32.53f;
     // calculate azimuth
-    sensor_0007_I2C_GY271_data->azimuth = Get_azimuth(((float)RAW_DATA->raw_x),
-                                                      ((float)RAW_DATA->raw_y));
+    sensor_0007_I2C_GY271_data->azimuth = Get_azimuth((sensor_0007_I2C_GY271_data->calib_factor.calibrated_axis[0]),
+                                                      (sensor_0007_I2C_GY271_data->calib_factor.calibrated_axis[1]));
 }
 
 static bool get_gy271_sensor_value(s_ezlopi_device_properties_t *properties)
