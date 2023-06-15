@@ -112,7 +112,7 @@ uint32_t web_provisioning_get_message_count(void)
     return message_counter;
 }
 
-int web_provisioning_send_to_nma_websocket(cJSON *cjson_data, e_trace_type_t print_type)
+int     web_provisioning_send_to_nma_websocket(cJSON *cjson_data, e_trace_type_t print_type)
 {
     int ret = 0;
     if (ezlopi_websocket_client_is_connected())

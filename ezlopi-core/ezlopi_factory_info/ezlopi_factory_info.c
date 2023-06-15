@@ -307,9 +307,9 @@ char *ezlopi_factory_info_v2_get_ezlopi_config(void)
 {
 // #if (EZLOPI_SWITCH_BOX == EZLOPI_DEVICE_TYPE)
 //     return switch_box_constant_config;
-#if (EZLOPI_DEVICE_TYPE_IR_RF_BLASTER == EZLOPI_DEVICE_TYPE)
+#if (EZLOPI_DEVICE_TYPE_IR_BLASTER == EZLOPI_DEVICE_TYPE)
     return ir_blaster_constant_config;
-#elif (EZLOPI_DEVICE_TYPE_TEST_DEVICE == EZLOPI_DEVICE_TYPE)
+#elif(EZLOPI_DEVICE_TYPE_TEST_DEVICE == EZLOPI_DEVICE_TYPE)
     return test_device_constant_config;
 #elif (EZLOPI_DEVICE_TYPE_GENERIC == EZLOPI_DEVICE_TYPE)
     if (NULL == g_ezlopi_config)
@@ -317,14 +317,10 @@ char *ezlopi_factory_info_v2_get_ezlopi_config(void)
         g_ezlopi_config = ezlopi_factory_info_v2_read_string(EZLOPI_CONFIG_OFFSET, EZLOPI_CONFIG_LENGTH);
     }
     return g_ezlopi_config;
-#elif (EZLOPI_DEVICE_TYPE_IR_RF_BLASTER == EZLOPI_DEVICE_TYPE)
+#elif (EZLOPI_DEVICE_TYPE_AMBIENT_TRACKER_PRO == EZLOPI_DEVICE_TYPE)
+    return ambient_tracker_constant_config;
+#elif (EZLOPI_DEVICE_TYPE_IR_BLASTER == EZLOPI_DEVICE_TYPE)
     return ir_blaster_constant_config;
-// #elif (EZLOPI_WATER_LEVEL_SENSOR == EZLOPI_DEVICE_TYPE)
-//     return water_level_sensor_constant_config;
-// #elif (EZLOPI_TURBIDITY_SENSOR == EZLOPI_DEVICE_TYPE)
-//     return water_turbidity_sensor_constant_config;
-// #elif (EZLOPI_PROXIMITY_SENSOR == EZLOPI_DEVICE_TYPE)
-//     return proximity_sensor_constant_config;
 #endif
     return NULL;
 }

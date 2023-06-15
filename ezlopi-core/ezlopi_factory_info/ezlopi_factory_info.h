@@ -11,16 +11,11 @@ extern "C"
 
 #define ID_BIN_VERSION ID_BIN_VERSION_1
 
-    // #define EZLOPI_GENERIC 0
-    // #define EZLOPI_SWITCH_BOX 1
-    // #define EZLOPI_IR_BLASTER 2
-    // #define EZLOPI_TEST_DEVICE -1
-
 #define EZLOPI_DEVICE_TYPE_TEST_DEVICE -1
 #define EZLOPI_DEVICE_TYPE_GENERIC 0
-#define EZLOPI_DEVICE_TYPE_SWITCHBOX 1
+#define EZLOPI_DEVICE_TYPE_SWITCH_BOX 1
 #define EZLOPI_DEVICE_TYPE_IR_RF_BLASTER 2
-#define EZLOPI_DEVICE_TYPE_SENSOR_SOUND 3
+#define EZLOPI_DEVICE_TYPE_SOUND_SENSOR 3
 #define EZLOPI_DEVICE_TYPE_AMBIENT_TRACKER_PRO 4
 
 #define EZLOPI_DEVICE_TYPE EZLOPI_DEVICE_TYPE_TEST_DEVICE
@@ -191,7 +186,7 @@ typedef struct s_basic_factory_info
 
 #if (EZLOPI_DEVICE_TYPE_GENERIC == EZLOPI_DEVICE_TYPE)
 
-#elif (EZLOPI_DEVICE_TYPE_IR_RF_BLASTER == EZLOPI_DEVICE_TYPE)
+#elif (EZLOPI_DEVICE_TYPE_IR_BLASTER == EZLOPI_DEVICE_TYPE)
 static const char *ir_blaster_constant_config =
     "{\
         \"cmd\": 3,\
@@ -209,7 +204,7 @@ static const char *ir_blaster_constant_config =
             }\
         ],\
     \"dev_total\": 1}";
-#elif (EZLOPI_DEVICE_TYPE_SWITCHBOX == EZLOPI_DEVICE_TYPE)
+#elif (EZLOPI_DEVICE_TYPE_SWITCH_BOX == EZLOPI_DEVICE_TYPE)
 static const char *switch_box_constant_config =
     "{\
         \"cmd\": 3,\

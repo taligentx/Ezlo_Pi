@@ -20,6 +20,12 @@ idf_component_register(
         device_0001_digitalOut_generic
         device_0002_digitalOut_relay
         device_0003_digitalOut_plug
+        sensor_0008_I2C_LTR303ALS
+        device_0009_other_RMT_SK6812
+        sensor_0010_I2C_BME680
+        sensor_0012_I2C_BME280
+        sensor_0014_UART_PMS5003
+        sensor_0019_digitalIn_PIR
         sensor_0005_I2C_MPU6050
         sensor_0006_I2C_ADXL345
         sensor_0007_I2C_GY271
@@ -45,6 +51,7 @@ idf_component_register(
         sensor_0034_digitalIn_proximity
         sensor_0035_digitalIn_touch_sensor_TPP223B
         device_0036_PWM_servo_MG996R
+        device_0038_digitalOut_RGB
 )
 
 

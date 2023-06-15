@@ -12,12 +12,13 @@ struct s_ezlopi_uart_object
     s_ezlopi_uart_t ezlopi_uart;
     __uart_upcall upcall;
     QueueHandle_t ezlopi_uart_queue_handle;
+    void* user_args;
 };
 
 static void ezlopi_uart_channel_task(void *args);
 static ezlo_uart_channel_t get_available_channel();
 
-s_ezlopi_uart_object_handle_t ezlopi_uart_init(uint32_t baudrate, uint32_t tx, uint32_t rx, __uart_upcall upcall)
+s_ezlopi_uart_object_handle_t ezlopi_uart_init(uint32_t baudrate, uint32_t tx, uint32_t rx, __uart_upcall upcall, void* args)
 {
     static QueueHandle_t ezlo_uart_channel_queue;
     s_ezlopi_uart_object_handle_t uart_object_handle = (struct s_ezlopi_uart_object *)malloc(sizeof(struct s_ezlopi_uart_object));
@@ -60,6 +61,7 @@ s_ezlopi_uart_object_handle_t ezlopi_uart_init(uint32_t baudrate, uint32_t tx, u
         uart_object_handle->ezlopi_uart.rx = rx;
         uart_object_handle->ezlopi_uart.enable = true;
         uart_object_handle->upcall = upcall;
+        uart_object_handle->user_args = args;
 
         xTaskCreate(ezlopi_uart_channel_task, "ezlopi_uart_channel_task", 2048 * 2, (void *)uart_object_handle, 10, NULL);
     }
@@ -113,7 +115,7 @@ static void ezlopi_uart_channel_task(void *args)
             }
             }
         }
-        ezlopi_uart_object->upcall(buffer, ezlopi_uart_object);
+        ezlopi_uart_object->upcall(buffer, ezlopi_uart_object, ezlopi_uart_object->user_args);
     }
 }
 
