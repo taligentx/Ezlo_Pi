@@ -147,24 +147,34 @@ static int device_0001_digitalOut_generic_prepare(void *arg)
         TRACE_E(" I am here !");
         device_0001_digitalOut_generic_device_properties = device_0001_digitalOut_generic_item(cjson_device);
 
-        device_settings_0001_digitalOut_generic_device_properties = ezlopi_device_settings_broadcast_interval_prepare_properties();
-
-        if (device_0001_digitalOut_generic_device_properties && device_settings_0001_digitalOut_generic_device_properties)
+        if (device_0001_digitalOut_generic_device_properties)
         {
             TRACE_E(" I am here !");
-            device_settings_0001_digitalOut_generic_device_properties->device_id = device_0001_digitalOut_generic_device_properties->ezlopi_cloud.device_id;
+            
+            
+            // TODO Need to implement status
 
-            if ((0 == ezlopi_devices_list_add(prep_arg->device, device_0001_digitalOut_generic_device_properties, NULL)) ||
-                 (0 == ezlopi_device_setting_add(device_settings_0001_digitalOut_generic_device_properties, NULL)))
+            if (0 == ezlopi_devices_list_add(prep_arg->device, device_0001_digitalOut_generic_device_properties, NULL))
             {
-                TRACE_E(" I am here !");
-                // free(device_0001_digitalOut_generic_device_properties);
-                // free(device_settings_0001_digitalOut_generic_device_properties);
+                free(device_0001_digitalOut_generic_device_properties);                
             }
             else
             {
-                TRACE_E(" I am here !");
-                ret = 1;
+                device_settings_0001_digitalOut_generic_device_properties = ezlopi_device_settings_broadcast_interval_prepare_properties();
+
+                if(device_settings_0001_digitalOut_generic_device_properties) 
+                {
+                    device_settings_0001_digitalOut_generic_device_properties->device_id = device_0001_digitalOut_generic_device_properties->ezlopi_cloud.device_id;
+
+                    if (0 == ezlopi_device_setting_add(device_settings_0001_digitalOut_generic_device_properties, NULL))
+                    {
+                        free(device_settings_0001_digitalOut_generic_device_properties);
+                    }
+                    else 
+                    {
+                        ret = 1;
+                    }                   
+                }
             }
         }
     }
@@ -312,6 +322,7 @@ static s_ezlopi_device_settings_properties_t *ezlopi_device_settings_broadcast_i
         ezlopi_setting_properties->description = "Sound Level parameter broadcast properties";
         ezlopi_setting_properties->value_type = "int";
         ezlopi_setting_properties->value.int_value = 10;
+        ezlopi_setting_properties->value_defaut.int_value = 10;
     }
     return ezlopi_setting_properties;
 }

@@ -50,7 +50,7 @@ void ezlopi_device_settings_list(cJSON *cj_request, cJSON *cj_response)
                         }
                         else if(strcmp(registered_settings->properties->value_type, "bool") == 0)
                         {
-                            // (cj_properties, "value", registered_settings->properties->value.int_value);
+
                         }
                         else if(strcmp(registered_settings->properties->value_type, "int") == 0)
                         {
@@ -62,7 +62,7 @@ void ezlopi_device_settings_list(cJSON *cj_request, cJSON *cj_response)
                         }
                         else if(strcmp(registered_settings->properties->value_type, "rgb") == 0)
                         {
-                            // cJSON_AddNumberToObject(cj_properties, "value", registered_settings->properties->value.rgb_value);
+
                         }       
                         else if(strcmp(registered_settings->properties->value_type, "scalable") == 0)
                         {
@@ -84,6 +84,116 @@ void ezlopi_device_settings_list(cJSON *cj_request, cJSON *cj_response)
         }
     }    
 }
+
+void ezlopi_device_settings_value_set(cJSON *cj_request, cJSON *cj_response)
+{
+    cJSON_AddItemReferenceToObject(cj_response, ezlopi_id_str, cJSON_GetObjectItem(cj_request, ezlopi_id_str));
+    cJSON_AddItemReferenceToObject(cj_response, ezlopi_key_method_str, cJSON_GetObjectItem(cj_request, ezlopi_key_method_str));
+    cJSON_AddObjectToObject(cj_response, ezlopi_result);
+
+    cJSON *cj_params = cJSON_GetObjectItem(cj_request, "params");
+    if (cj_params)
+    {
+        char *settings_id_str = 0;
+        CJSON_GET_VALUE_STRING(cj_params, ezlopi__id_str, settings_id_str);
+        int settings_id = strtol(settings_id_str, NULL, 16);
+        TRACE_I("settings_id_str: %X", settings_id);
+
+        l_ezlopi_device_settings_t *registered_settings = ezlopi_devices_settings_get_list();
+        while (NULL != registered_settings)
+        {
+            if (registered_settings->properties)
+            {
+                if (settings_id == registered_settings->properties->id)
+                {
+                   _ezlopi_device_settings_value_set(settings_id, cj_params);
+                }
+            }
+
+            registered_settings = registered_settings->next;
+        }
+    }
+}
+
+void ezlopi_device_settings_reset(cJSON *cj_request, cJSON *cj_response)
+{
+    cJSON_AddItemReferenceToObject(cj_response, ezlopi_id_str, cJSON_GetObjectItem(cj_request, ezlopi_id_str));
+    cJSON_AddItemReferenceToObject(cj_response, ezlopi_key_method_str, cJSON_GetObjectItem(cj_request, ezlopi_key_method_str));
+    cJSON_AddObjectToObject(cj_response, ezlopi_result);
+
+    cJSON *cj_params = cJSON_GetObjectItem(cj_request, "params");
+    if (cj_params)
+    {
+        char *settings_id_str = 0;
+        CJSON_GET_VALUE_STRING(cj_params, ezlopi__id_str, settings_id_str);
+        int settings_id = strtol(settings_id_str, NULL, 16);
+        TRACE_I("settings_id_str: %X", settings_id);
+
+        l_ezlopi_device_settings_t *registered_settings = ezlopi_devices_settings_get_list();
+        while (NULL != registered_settings)
+        {
+            if (registered_settings->properties)
+            {
+                if (settings_id == registered_settings->properties->id)
+                { 
+                   _ezlopi_device_settings_reset(settings_id);
+                }
+            }
+
+            registered_settings = registered_settings->next;
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 void settings_list(cJSON *cj_request, cJSON *cj_response) {
 
@@ -197,6 +307,5 @@ void settings_value_set_response(cJSON *cj_request, cJSON *cj_response)
 
     cJSON_AddNullToObject(cj_response, ezlopi_str_error);
 
-    cJSON_AddObjectToObject(cj_response, ezlopi_result);
-   
+    cJSON_AddObjectToObject(cj_response, ezlopi_result);   
 }

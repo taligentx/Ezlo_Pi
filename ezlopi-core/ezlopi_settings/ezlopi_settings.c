@@ -54,20 +54,20 @@ s_ezlopi_settings_device_settings_type_scalable_value_t s_ezlopi_settings_device
 };
 
 
-static l_ezlopi_device_settings_t *configured_settings = NULL;
+static l_ezlopi_device_settings_t *configured_settings_head = NULL;
 static l_ezlopi_device_settings_t *ezlopi_device_settings_list_create(s_ezlopi_device_settings_properties_t *properties, void *user_arg);
 
 l_ezlopi_device_settings_t *ezlopi_devices_settings_get_list(void)
 {
-    return configured_settings;
+    return configured_settings_head;
 }
 
 int ezlopi_device_setting_add(s_ezlopi_device_settings_properties_t *properties, void *user_arg)
 {
     int ret = 0;
-    if (configured_settings)
+    if (configured_settings_head)
     {
-        l_ezlopi_device_settings_t *current_settings = configured_settings;
+        l_ezlopi_device_settings_t *current_settings = configured_settings_head;
 
         while (NULL != current_settings->next)
         {
@@ -82,8 +82,8 @@ int ezlopi_device_setting_add(s_ezlopi_device_settings_properties_t *properties,
     }
     else
     {
-        configured_settings = ezlopi_device_settings_list_create(properties, user_arg);
-        if (configured_settings)
+        configured_settings_head = ezlopi_device_settings_list_create(properties, user_arg);
+        if (configured_settings_head)
         {
             ret = 1;
         }
@@ -112,8 +112,122 @@ static l_ezlopi_device_settings_t *ezlopi_device_settings_list_create(s_ezlopi_d
     }
     return settings_device_list;
 }
+void _ezlopi_device_settings_value_set(uint32_t id, void * args)
+{
+    int ret = 0;
+    cJSON *cjson_params = (cJSON *)args;
 
+    char* jsonStr = cJSON_PrintUnformatted(cjson_params);
+    TRACE_I("%s\n", jsonStr);
 
+    // Free resources
+    cJSON_free(jsonStr);
+
+    if (NULL != cjson_params)
+    {
+        
+        l_ezlopi_device_settings_t *settings_current = configured_settings_head;
+
+        while(NULL != settings_current) 
+        {
+            if (NULL != settings_current->properties)
+            {
+                if (id == settings_current->properties->id)
+                {
+                    if(strcmp(settings_current->properties->value_type, "action") == 0) 
+                    {
+                        
+                    }
+                    else if(strcmp(settings_current->properties->value_type, "bool") == 0)
+                    {
+                        
+                        cJSON* value = cJSON_GetObjectItem(cjson_params, "value");                        
+                        if(cJSON_IsTrue(value)) 
+                        {
+                            settings_current->properties->value.bool_value = true;
+                        }
+                        else 
+                        {
+                            settings_current->properties->value.bool_value = false;
+                        }
+                                                                        
+                    }
+                    else if(strcmp(settings_current->properties->value_type, "int") == 0)
+                    {
+                        cJSON *value = cJSON_GetObjectItem(cjson_params, "value");
+                        if (value)                                          
+                        {                                                       
+                            settings_current->properties->value.int_value = value->valueint;          
+                        } 
+
+                    }
+                    else if(strcmp(settings_current->properties->value_type, "string") == 0)
+                    {
+
+                    }
+                    else if(strcmp(settings_current->properties->value_type, "rgb") == 0)
+                    {
+
+                    }       
+                    else if(strcmp(settings_current->properties->value_type, "scalable") == 0)
+                    {
+
+                    }
+                    else 
+                    {
+
+                    } 
+                }                
+            }
+            settings_current = settings_current->next;
+        }
+    }    
+}
+
+void _ezlopi_device_settings_reset(uint32_t id) 
+{
+    l_ezlopi_device_settings_t *configured_settings_current = configured_settings_head;
+    while(NULL != configured_settings_current) 
+    {
+        if (NULL != configured_settings_current->properties)
+        {
+            if (id == configured_settings_current->properties->id)
+            {
+                if(strcmp(configured_settings_current->properties->value_type, "action") == 0) 
+                {
+                    
+                }
+                else if(strcmp(configured_settings_current->properties->value_type, "bool") == 0)
+                {
+
+                    configured_settings_current->properties->value.bool_value = configured_settings_current->properties->value_defaut.bool_value;
+                                                                    
+                }
+                else if(strcmp(configured_settings_current->properties->value_type, "int") == 0)
+                {
+                    configured_settings_current->properties->value.int_value = configured_settings_current->properties->value_defaut.int_value;
+
+                }
+                else if(strcmp(configured_settings_current->properties->value_type, "string") == 0)
+                {
+
+                }
+                else if(strcmp(configured_settings_current->properties->value_type, "rgb") == 0)
+                {
+
+                }       
+                else if(strcmp(configured_settings_current->properties->value_type, "scalable") == 0)
+                {
+                }
+                else 
+                {
+
+                }                             
+            }
+        }
+        configured_settings_current = configured_settings_current->next;
+    } 
+}
 void ezlopi_device_settings_print_settings(l_ezlopi_device_settings_t *head) {
     l_ezlopi_device_settings_t *current = head;
 

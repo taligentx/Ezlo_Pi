@@ -57,6 +57,16 @@ typedef struct s_ezlopi_device_settings_properties
         s_ezlopi_settings_device_settings_type_rgb_value_t * rgb_value;
         s_ezlopi_settings_device_settings_type_scalable_value_t * scalable_value;
     } value;
+
+    union {
+        char * string_value;
+        int int_value;
+        bool bool_value;
+        s_ezlopi_settings_device_settings_type_action_value_t * action_value;
+        s_ezlopi_settings_device_settings_type_rgb_value_t * rgb_value;
+        s_ezlopi_settings_device_settings_type_scalable_value_t * scalable_value;
+    } value_defaut;
+
 } s_ezlopi_device_settings_properties_t;
 
 typedef struct l_ezlopi_device_settings
@@ -70,6 +80,9 @@ typedef struct l_ezlopi_device_settings
 int ezlopi_device_setting_add(s_ezlopi_device_settings_properties_t *properties, void *user_arg);
 void ezlopi_device_settings_print_settings(l_ezlopi_device_settings_t *head);
 void ezlopi_initialize_settings(void);
+void _ezlopi_device_settings_value_set(uint32_t id, void * args);
+void _ezlopi_device_settings_reset(uint32_t id);
+
 l_ezlopi_device_settings_t *ezlopi_devices_settings_get_list(void);
 uint16_t ezlopi_settings_get_settings_count(void);
 s_ezlopi_hub_settings_t *ezlopi_settings_get_settings_list(void);
