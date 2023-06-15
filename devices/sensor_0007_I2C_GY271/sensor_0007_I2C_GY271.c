@@ -17,16 +17,6 @@
 /*                              DEFINES                                                     */
 /*************************************************************************************************/
 static bool calibration_complete = false;
-// static int calibrationData[3][2] = {0};
-
-// static int calibrationData[3][2] = {{-32767, 32768},  // xmin,xmax
-//                                     {-32767, 32768},  // ymin,ymax
-//                                     {-32767, 32768}}; // zmin,zmax// Initialization added!
-// static long bias_axis[3] = {0, 0, 0};
-// static long delta_axis[3] = {0, 0, 0};
-// static float delta_avg = 0;                  // (Delta_axis[0] + Delta_axis[1] + Delta_axis[2])/3
-// static float scale_axis[3] = {0, 0, 0};      // delta_avg / delta_axis
-// static float calibrated_axis[3] = {0, 0, 0}; // scale_axis[0] * ( raw_axis - bias_axis[0] )
 
 #define REG_COUNT_LEN 6 // magnetometer data is to be read in one go .
 
@@ -120,6 +110,25 @@ int sensor_0007_I2C_GY271(e_ezlopi_actions_t action, s_ezlopi_device_properties_
 }
 
 //------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+
+static int add_device_to_list(s_ezlopi_prep_arg_t *prep_arg, s_ezlopi_device_properties_t *properties, void *user_arg)
+{
+    int ret = 0;
+    if (properties)
+    {
+        if (0 == ezlopi_devices_list_add(prep_arg->device, properties, user_arg))
+        {
+            free(properties);
+        }
+        else
+        {
+            ret = 1;
+        }
+    }
+    return ret;
+}
+
 //------------------------------------------------------------------------------
 
 static void Gathering_initial_raw_max_min_values(s_ezlopi_device_properties_t *properties, int (*calibrationData)[2])
@@ -234,13 +243,13 @@ static void Gather_GY271_Calibration_data(void *params) // calibrate task
     vTaskDelay(500); // 5 sec
     for (uint16_t i = 0; i <= 100; i++)
     {
-        // call the data gathering function [50 * 40 ms = 20 sec]
+        // call the data gathering function [100 * 20 ms = 20 sec]
         Gathering_initial_raw_max_min_values(properties, calibrationData);
         if (i % 5 == 0)
         {
-            TRACE_I(" ------------------------------------------------- Time :- {%u sec} ", (i / 5) * 1);
+            TRACE_I(" ------------------------------------------------- Time :- {%u sec} ", (i / 5));
         }
-        vTaskDelay(20); // 400ms
+        vTaskDelay(20); // 200ms
     }
 
     TRACE_W("..........................Calculating Paramter.......................");
@@ -288,23 +297,6 @@ static void Gather_GY271_Calibration_data(void *params) // calibrate task
 }
 
 //------------------------------------------------------------------------------
-
-static int add_device_to_list(s_ezlopi_prep_arg_t *prep_arg, s_ezlopi_device_properties_t *properties, void *user_arg)
-{
-    int ret = 0;
-    if (properties)
-    {
-        if (0 == ezlopi_devices_list_add(prep_arg->device, properties, user_arg))
-        {
-            free(properties);
-        }
-        else
-        {
-            ret = 1;
-        }
-    }
-    return ret;
-}
 
 static s_ezlopi_device_properties_t *sensor_i2c_gy271_prepare_properties(uint32_t DEVICE_ID, const char *CATEGORY, const char *SUB_CATEGORY, const char *ITEM_NAME, const char *VALUE_TYPE, cJSON *cjson_device, gy271_data_t *sensor_0007_I2C_GY271_data)
 {
@@ -455,7 +447,6 @@ static int sensor_i2c_gy271_get_value_cjson(s_ezlopi_device_properties_t *proper
 {
     int ret = 0;
     cJSON *cjson_properties = (cJSON *)args;
-    // gy271_data_t data_val = {0};
     gy271_data_t *sensor_0007_I2C_GY271_data = (gy271_data_t *)properties->user_arg;
 
     if (cjson_properties && sensor_0007_I2C_GY271_data)

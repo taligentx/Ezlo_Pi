@@ -57,7 +57,7 @@
 //  RNG  = 00 [+-2G]    with 12000 LSB/G
 //  ODR  = 00 [10Hz]
 //  MODE = 01 [continous]
-#define GY271_OPERATION_MODE (GY271_OSR_128) | (GY271_RNG_2G) | (GY271_ODR_50hz) | (GY271_MODE_CONT)
+#define GY271_OPERATION_MODE (GY271_OSR_256) | (GY271_RNG_2G) | (GY271_ODR_10hz) | (GY271_MODE_CONT)
 
 // Enable INTERUPT bit from control register2 [in 0x0A] + Masked Bits.
 #define GY271_INT_EN (0x00)
