@@ -82,22 +82,33 @@
 #define PI (3.1416f)
 
 // CUSTOM GY271 Data storage structure
-typedef struct gy271_raw_data_tt
-{
-    int16_t raw_x;
-    int16_t raw_y;
-    int16_t raw_z;
-    int16_t raw_temp;
-} gy271_raw_data_t;
 
-typedef struct gy271_data_tt
+typedef struct
 {
+    long bias_axis[3];        // (max_ + min_)/2
+    long delta_axis[3];       // (max_ - min_)/2
+    float delta_avg;          // (Delta_axis[0] + Delta_axis[1] + Delta_axis[2])/3
+    float scale_axis[3];      // delta_avg / delta_axis
+    float calibrated_axis[3]; // scale_axis[0] * ( raw_axis - bias_axis[0] )
+} gy271_calib_t;
+
+typedef struct
+{
+    gy271_calib_t calib_factor;
     float X;
     float Y;
     float Z;
     float T;
     int azimuth;
 } gy271_data_t;
+
+typedef struct
+{
+    int16_t raw_x;
+    int16_t raw_y;
+    int16_t raw_z;
+    int16_t raw_temp;
+} gy271_raw_data_t;
 
 // Action
 int sensor_0007_I2C_GY271(e_ezlopi_actions_t action, s_ezlopi_device_properties_t *properties, void *arg, void *user_arg);

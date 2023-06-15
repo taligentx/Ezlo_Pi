@@ -235,7 +235,7 @@ static int sensor_0010_I2C_BME680_update_values(s_ezlopi_device_properties_t *pr
 static int sensor_0010_I2C_BME680_get_value_cjson(s_ezlopi_device_properties_t *properties, void *args)
 {
     int ret = 0;
-
+ 
     cJSON *cjson_properties = (cJSON *)args;
     char formatted_value[20];
     bme680_data_t *sensor_0010_I2C_BME680_data = (bme680_data_t *)properties->user_arg;
