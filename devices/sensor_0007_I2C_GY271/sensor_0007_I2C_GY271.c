@@ -224,23 +224,23 @@ static void Gathering_initial_raw_max_min_values(s_ezlopi_device_properties_t *p
 
 static void Gather_GY271_Calibration_data(void *params) // calibrate task
 {
-    int calibrationData[3][2] = {{0, 0},  // xmin,xmax
-                                 {0, 0},  // ymin,ymax
-                                 {0, 0}}; // zmin,zmax// Initialization added!
+    static int calibrationData[3][2] = {{0, 0},  // xmin,xmax
+                                        {0, 0},  // ymin,ymax
+                                        {0, 0}}; // zmin,zmax// Initialization added!
     s_ezlopi_device_properties_t *properties = (s_ezlopi_device_properties_t *)params;
 
     gy271_data_t *sensor_0007_I2C_GY271_data = (gy271_data_t *)properties->user_arg;
 
     vTaskDelay(500); // 5 sec
-    for (uint16_t i = 0; i <= 50; i++)
+    for (uint16_t i = 0; i <= 100; i++)
     {
         // call the data gathering function [50 * 40 ms = 20 sec]
         Gathering_initial_raw_max_min_values(properties, calibrationData);
         if (i % 5 == 0)
         {
-            TRACE_I(" ------------------------------------------------- Time :- {%u sec} ", (i / 5) * 2);
+            TRACE_I(" ------------------------------------------------- Time :- {%u sec} ", (i / 5) * 1);
         }
-        vTaskDelay(40); // 400ms
+        vTaskDelay(20); // 400ms
     }
 
     TRACE_W("..........................Calculating Paramter.......................");
@@ -266,21 +266,21 @@ static void Gather_GY271_Calibration_data(void *params) // calibrate task
     sensor_0007_I2C_GY271_data->calib_factor.scale_axis[1] = sensor_0007_I2C_GY271_data->calib_factor.delta_avg / sensor_0007_I2C_GY271_data->calib_factor.delta_axis[1]; // y-axis
     sensor_0007_I2C_GY271_data->calib_factor.scale_axis[2] = sensor_0007_I2C_GY271_data->calib_factor.delta_avg / sensor_0007_I2C_GY271_data->calib_factor.delta_axis[2]; // z-axis
 
-    ESP_LOGI("CAL_PARA", "Bias :--- _Xaxis=%6ld | _Yaxis=%6ld | _Zaxis=%6ld ",
-             sensor_0007_I2C_GY271_data->calib_factor.bias_axis[0],
-             sensor_0007_I2C_GY271_data->calib_factor.bias_axis[1],
-             sensor_0007_I2C_GY271_data->calib_factor.bias_axis[2]);
+    TRACE_B("Bias :--- _Xaxis=%6ld | _Yaxis=%6ld | _Zaxis=%6ld ",
+            sensor_0007_I2C_GY271_data->calib_factor.bias_axis[0],
+            sensor_0007_I2C_GY271_data->calib_factor.bias_axis[1],
+            sensor_0007_I2C_GY271_data->calib_factor.bias_axis[2]);
 
-    ESP_LOGI("CAL_PARA", "Delta :--- _Xaxis=%6ld | _Yaxis=%6ld | _Zaxis=%6ld ",
-             sensor_0007_I2C_GY271_data->calib_factor.delta_axis[0],
-             sensor_0007_I2C_GY271_data->calib_factor.delta_axis[1],
-             sensor_0007_I2C_GY271_data->calib_factor.delta_axis[2]);
-    ESP_LOGI("CAL_PARA", "Delta_AVG :--- %6f", sensor_0007_I2C_GY271_data->calib_factor.delta_avg);
+    TRACE_B("Delta :--- _Xaxis=%6ld | _Yaxis=%6ld | _Zaxis=%6ld ",
+            sensor_0007_I2C_GY271_data->calib_factor.delta_axis[0],
+            sensor_0007_I2C_GY271_data->calib_factor.delta_axis[1],
+            sensor_0007_I2C_GY271_data->calib_factor.delta_axis[2]);
+    TRACE_B("Delta_AVG :--- %6f", sensor_0007_I2C_GY271_data->calib_factor.delta_avg);
 
-    ESP_LOGI("CAL_PARA", "Scale :--- _Xaxis=%6f | _Yaxis=%6f | _Zaxis=%6f ",
-             sensor_0007_I2C_GY271_data->calib_factor.scale_axis[0],
-             sensor_0007_I2C_GY271_data->calib_factor.scale_axis[1],
-             sensor_0007_I2C_GY271_data->calib_factor.scale_axis[0]);
+    TRACE_B("Scale :--- _Xaxis=%6f | _Yaxis=%6f | _Zaxis=%6f ",
+            sensor_0007_I2C_GY271_data->calib_factor.scale_axis[0],
+            sensor_0007_I2C_GY271_data->calib_factor.scale_axis[1],
+            sensor_0007_I2C_GY271_data->calib_factor.scale_axis[0]);
     TRACE_W("...............................................................\n\n");
 
     calibration_complete = true;
