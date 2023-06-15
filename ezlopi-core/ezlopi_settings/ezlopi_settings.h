@@ -81,7 +81,8 @@ int ezlopi_device_setting_add(s_ezlopi_device_settings_properties_t *properties,
 void ezlopi_device_settings_print_settings(l_ezlopi_device_settings_t *head);
 void ezlopi_initialize_settings(void);
 void _ezlopi_device_settings_value_set(uint32_t id, void * args);
-void _ezlopi_device_settings_reset(uint32_t id);
+void _ezlopi_device_settings_reset_settings_id(uint32_t id);
+void _ezlopi_device_settings_reset_device_id(uint32_t id);
 
 l_ezlopi_device_settings_t *ezlopi_devices_settings_get_list(void);
 uint16_t ezlopi_settings_get_settings_count(void);

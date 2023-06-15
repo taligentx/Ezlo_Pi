@@ -443,6 +443,93 @@ int ezlopi_settings_retrive_settings(s_ezlopi_hub_settings_t * settings_list, ui
     return ret;
 }
 
+uint8_t ezlopi_nvs_write_int32(int32_t i, const char * key_name)
+{
+    uint8_t ret = 0;
+    if (ezlopi_nvs_handle)
+    {
+        esp_err_t err = nvs_set_i32(ezlopi_nvs_handle, key_name, i);
+        if (ESP_OK != err)
+        {
+            TRACE_W("nvs_set_i32 - error: %s", esp_err_to_name(err));
+        }
+        else
+        {
+            ret = 1;
+        }
+    }    
+    return ret;    
+
+}
+
+uint8_t ezlopi_nvs_read_int32(int32_t *i, const char * key_name) {
+    uint8_t ret = 0;
+    if (ezlopi_nvs_handle)
+    {
+        esp_err_t err = nvs_get_i32(ezlopi_nvs_handle, key_name, i);
+        if (ESP_OK == err)
+        {
+            ret = 1;
+        } 
+        else
+        {
+            TRACE_W("nvs_get_i32 - error: %s", esp_err_to_name(err));
+        }
+    }
+    return ret;
+}
+
+uint8_t ezlopi_nvs_write_bool(bool b, const char * key_name)
+{
+    uint8_t ret = 0;
+    if (ezlopi_nvs_handle)
+    {
+        uint8_t bool_val;
+
+        if(true == b) 
+        {
+            bool_val = 1;
+        }
+        else 
+        {
+            bool_val = 0;
+        }
+
+        esp_err_t err = nvs_set_u8(ezlopi_nvs_handle, key_name, bool_val);
+        
+        if (ESP_OK != err)
+        {
+            TRACE_W("nvs_set_u8 - error: %s", esp_err_to_name(err));
+        }
+        else
+        {
+            ret = 1;
+        }
+    }    
+    return ret;    
+
+}
+
+uint8_t ezlopi_nvs_read_bool(bool * b, const char * key_name) {
+    uint8_t ret = 0;
+    if (ezlopi_nvs_handle)
+    {
+        uint8_t bool_val = 0;
+        esp_err_t err = nvs_get_u8(ezlopi_nvs_handle, key_name, &bool_val);
+        if (ESP_OK == err)
+        {
+            if(bool_val)    *b = true;
+            else *b = false;
+            ret = 1;
+        } 
+        else
+        {
+            TRACE_W("nvs_get_u8 - error: %s", esp_err_to_name(err));
+        }
+    }
+    return ret;
+}
+
 static int ezlopi_nvs_write_str(char *data, uint32_t len, char *nvs_name)
 {
     int ret = 0;

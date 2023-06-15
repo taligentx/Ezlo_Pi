@@ -150,6 +150,8 @@ void _ezlopi_device_settings_value_set(uint32_t id, void * args)
                         {
                             settings_current->properties->value.bool_value = false;
                         }
+
+                        ezlopi_nvs_write_bool(settings_current->properties->value.bool_value, settings_current->properties->nvs_alias);
                                                                         
                     }
                     else if(strcmp(settings_current->properties->value_type, "int") == 0)
@@ -159,6 +161,8 @@ void _ezlopi_device_settings_value_set(uint32_t id, void * args)
                         {                                                       
                             settings_current->properties->value.int_value = value->valueint;          
                         } 
+
+                        ezlopi_nvs_write_int32(settings_current->properties->value.int_value, settings_current->properties->nvs_alias);
 
                     }
                     else if(strcmp(settings_current->properties->value_type, "string") == 0)
@@ -184,7 +188,7 @@ void _ezlopi_device_settings_value_set(uint32_t id, void * args)
     }    
 }
 
-void _ezlopi_device_settings_reset(uint32_t id) 
+void _ezlopi_device_settings_reset_settings_id(uint32_t id) 
 {
     l_ezlopi_device_settings_t *configured_settings_current = configured_settings_head;
     while(NULL != configured_settings_current) 
@@ -192,6 +196,53 @@ void _ezlopi_device_settings_reset(uint32_t id)
         if (NULL != configured_settings_current->properties)
         {
             if (id == configured_settings_current->properties->id)
+            {
+                if(strcmp(configured_settings_current->properties->value_type, "action") == 0) 
+                {
+                    
+                }
+                else if(strcmp(configured_settings_current->properties->value_type, "bool") == 0)
+                {
+
+                    configured_settings_current->properties->value.bool_value = configured_settings_current->properties->value_defaut.bool_value;
+                    ezlopi_nvs_write_bool(configured_settings_current->properties->value.bool_value, configured_settings_current->properties->nvs_alias);
+                                                                    
+                }
+                else if(strcmp(configured_settings_current->properties->value_type, "int") == 0)
+                {
+                    configured_settings_current->properties->value.int_value = configured_settings_current->properties->value_defaut.int_value;
+                    ezlopi_nvs_write_int32(configured_settings_current->properties->value.int_value, configured_settings_current->properties->nvs_alias);
+
+                }
+                else if(strcmp(configured_settings_current->properties->value_type, "string") == 0)
+                {
+
+                }
+                else if(strcmp(configured_settings_current->properties->value_type, "rgb") == 0)
+                {
+
+                }       
+                else if(strcmp(configured_settings_current->properties->value_type, "scalable") == 0)
+                {
+                }
+                else 
+                {
+
+                }                             
+            }
+        }
+        configured_settings_current = configured_settings_current->next;
+    } 
+}
+
+void _ezlopi_device_settings_reset_device_id(uint32_t id) 
+{
+    l_ezlopi_device_settings_t *configured_settings_current = configured_settings_head;
+    while(NULL != configured_settings_current) 
+    {
+        if (NULL != configured_settings_current->properties)
+        {
+            if (id == configured_settings_current->properties->device_id)
             {
                 if(strcmp(configured_settings_current->properties->value_type, "action") == 0) 
                 {
@@ -228,6 +279,7 @@ void _ezlopi_device_settings_reset(uint32_t id)
         configured_settings_current = configured_settings_current->next;
     } 
 }
+
 void ezlopi_device_settings_print_settings(l_ezlopi_device_settings_t *head) {
     l_ezlopi_device_settings_t *current = head;
 

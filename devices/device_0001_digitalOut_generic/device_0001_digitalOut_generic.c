@@ -15,6 +15,7 @@
 #include "ezlopi_device_value_updated.h"
 #include "ezlopi_cloud_constants.h"
 #include "ezlopi_settings.h"
+#include "ezlopi_nvs.h"
 
 static int device_0001_digitalOut_generic_prepare(void *arg);
 static int device_0001_digitalOut_generic_init(s_ezlopi_device_properties_t *properties);
@@ -315,14 +316,27 @@ static s_ezlopi_device_settings_properties_t *ezlopi_device_settings_broadcast_i
     
     if(ezlopi_setting_properties) 
     {
+        
+        int settings_value;
+
         memset(ezlopi_setting_properties, 0, sizeof(s_ezlopi_device_settings_properties_t));
 
         ezlopi_setting_properties->id = ezlopi_cloud_generate_settings_id();
         ezlopi_setting_properties->label = "broadcast_interval";
         ezlopi_setting_properties->description = "Sound Level parameter broadcast properties";
         ezlopi_setting_properties->value_type = "int";
-        ezlopi_setting_properties->value.int_value = 10;
+        ezlopi_setting_properties->nvs_alias = "brd_intrvl";
         ezlopi_setting_properties->value_defaut.int_value = 10;
+        
+        if(ezlopi_nvs_read_int32(&settings_value, ezlopi_setting_properties->nvs_alias))
+        {
+            ezlopi_setting_properties->value.int_value = settings_value;
+        }
+        else
+        {
+            ezlopi_setting_properties->value.int_value = ezlopi_setting_properties->value_defaut.int_value;
+        }      
+        
     }
     return ezlopi_setting_properties;
 }

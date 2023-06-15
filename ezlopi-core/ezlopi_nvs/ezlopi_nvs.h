@@ -40,6 +40,11 @@ extern "C"
     int ezlopi_settings_save_settings(const s_ezlopi_hub_settings_t * settings_list, uint16_t num_settings);
     int ezlopi_settings_retrive_settings(s_ezlopi_hub_settings_t * ezlopi_settings_list, uint16_t num_settings);
 
+    uint8_t ezlopi_nvs_write_int32(int32_t i, const char * key_name);
+    uint8_t ezlopi_nvs_read_int32(int32_t *i, const char * key_name);
+    uint8_t ezlopi_nvs_write_bool(bool b, const char * key_name);
+    uint8_t ezlopi_nvs_read_bool(bool * b, const char * key_name);  
+
 #ifdef __cplusplus
 }
 #endif

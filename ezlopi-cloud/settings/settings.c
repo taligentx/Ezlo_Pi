@@ -124,19 +124,40 @@ void ezlopi_device_settings_reset(cJSON *cj_request, cJSON *cj_response)
     cJSON *cj_params = cJSON_GetObjectItem(cj_request, "params");
     if (cj_params)
     {
-        char *settings_id_str = 0;
-        CJSON_GET_VALUE_STRING(cj_params, ezlopi__id_str, settings_id_str);
-        int settings_id = strtol(settings_id_str, NULL, 16);
-        TRACE_I("settings_id_str: %X", settings_id);
+
 
         l_ezlopi_device_settings_t *registered_settings = ezlopi_devices_settings_get_list();
         while (NULL != registered_settings)
         {
             if (registered_settings->properties)
             {
-                if (settings_id == registered_settings->properties->id)
-                { 
-                   _ezlopi_device_settings_reset(settings_id);
+
+                if (cJSON_HasObjectItem(cj_params, ezlopi__id_str)) 
+                {
+                    
+                    char *settings_id_str = 0;
+                    CJSON_GET_VALUE_STRING(cj_params, ezlopi__id_str, settings_id_str);
+                    int settings_id = strtol(settings_id_str, NULL, 16);
+                    TRACE_I("settings_id_str: %X", settings_id);   
+
+                    if (settings_id == registered_settings->properties->id)
+                    {                           
+                        _ezlopi_device_settings_reset_settings_id(settings_id);
+                    }                    
+
+                }
+                else if(cJSON_HasObjectItem(cj_params, ezlopi_deviceId_str))
+                {
+                    char *device_id_str = 0;
+                    CJSON_GET_VALUE_STRING(cj_params, ezlopi_deviceId_str, device_id_str);
+                    int device_id = strtol(device_id_str, NULL, 16);
+                    TRACE_I("device_id_str: %X", device_id); 
+
+                    if (device_id == registered_settings->properties->device_id)
+                    {                        
+                        _ezlopi_device_settings_reset_device_id(device_id);   
+                    }             
+
                 }
             }
 
