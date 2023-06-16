@@ -23,6 +23,7 @@ static int device_0001_digitalOut_generic_get_value_cjson(s_ezlopi_device_proper
 static int device_0001_digitalOut_generic_set_value(s_ezlopi_device_properties_t *properties, void *arg);
 static s_ezlopi_device_properties_t *device_0001_digitalOut_generic_item(cJSON *cjson_device);
 static s_ezlopi_device_settings_properties_t *ezlopi_device_settings_broadcast_interval_prepare_properties();
+static s_ezlopi_device_settings_properties_t *ezlopi_device_settings_sound_threshold_prepare_properties(); 
 static void device_0001_digitalOut_generic_write_gpio_value(s_ezlopi_device_properties_t *properties);
 static uint32_t device_0001_digitalOut_generic_read_gpio_value(s_ezlopi_device_properties_t *properties);
 static void device_0001_digitalOut_generic_gpio_interrupt_upcall(s_ezlopi_device_properties_t *properties);
@@ -142,6 +143,7 @@ static int device_0001_digitalOut_generic_prepare(void *arg)
 
     s_ezlopi_device_properties_t *device_0001_digitalOut_generic_device_properties = NULL;
     s_ezlopi_device_settings_properties_t * device_settings_0001_digitalOut_generic_device_properties = NULL;
+    s_ezlopi_device_settings_properties_t * device_settings_0001_digitalOut_sound_device_properties = NULL;
     TRACE_E(" I am here !");
     if ((NULL == device_0001_digitalOut_generic_device_properties) && (NULL != cjson_device))
     {
@@ -162,19 +164,33 @@ static int device_0001_digitalOut_generic_prepare(void *arg)
             else
             {
                 device_settings_0001_digitalOut_generic_device_properties = ezlopi_device_settings_broadcast_interval_prepare_properties();
+                device_settings_0001_digitalOut_sound_device_properties = ezlopi_device_settings_sound_threshold_prepare_properties();
 
-                if(device_settings_0001_digitalOut_generic_device_properties) 
+                if(device_settings_0001_digitalOut_generic_device_properties && device_settings_0001_digitalOut_sound_device_properties) 
                 {
                     device_settings_0001_digitalOut_generic_device_properties->device_id = device_0001_digitalOut_generic_device_properties->ezlopi_cloud.device_id;
+                    device_settings_0001_digitalOut_sound_device_properties->device_id = device_0001_digitalOut_generic_device_properties->ezlopi_cloud.device_id;
 
                     if (0 == ezlopi_device_setting_add(device_settings_0001_digitalOut_generic_device_properties, NULL))
                     {
                         free(device_settings_0001_digitalOut_generic_device_properties);
+                        ret = 0;
                     }
                     else 
                     {
                         ret = 1;
-                    }                   
+                    }     
+
+                    if (0 == ezlopi_device_setting_add(device_settings_0001_digitalOut_sound_device_properties, NULL))
+                    {
+                        free(device_settings_0001_digitalOut_sound_device_properties);
+                        ret = 0;
+                    }
+                    else 
+                    {
+                        ret = 1;
+                    } 
+
                 }
             }
         }
@@ -335,6 +351,45 @@ static s_ezlopi_device_settings_properties_t *ezlopi_device_settings_broadcast_i
         else
         {
             ezlopi_setting_properties->value.int_value = ezlopi_setting_properties->value_defaut.int_value;
+        }      
+        
+    }
+    return ezlopi_setting_properties;
+}
+
+static s_ezlopi_device_settings_properties_t *ezlopi_device_settings_sound_threshold_prepare_properties(void) 
+{
+    s_ezlopi_device_settings_properties_t * ezlopi_setting_properties = (s_ezlopi_device_settings_properties_t *)malloc(sizeof(s_ezlopi_device_settings_properties_t));
+    
+    if(ezlopi_setting_properties) 
+    {
+        
+        float settings_value;
+
+        memset(ezlopi_setting_properties, 0, sizeof(s_ezlopi_device_settings_properties_t));
+
+        ezlopi_setting_properties->id = ezlopi_cloud_generate_settings_id();
+        ezlopi_setting_properties->label = "sound threshold";
+        ezlopi_setting_properties->description = "Sound Level threshold in decible";
+        ezlopi_setting_properties->value_type = "scalable";
+        ezlopi_setting_properties->nvs_alias = "db_thrshl";
+
+        ezlopi_setting_properties->value_defaut.scalable_value = (s_ezlopi_settings_device_settings_type_scalable_value_t *) malloc (sizeof(s_ezlopi_settings_device_settings_type_scalable_value_t));
+        memset(ezlopi_setting_properties->value_defaut.scalable_value, 0, sizeof(s_ezlopi_settings_device_settings_type_scalable_value_t));
+        
+        ezlopi_setting_properties->value.scalable_value = (s_ezlopi_settings_device_settings_type_scalable_value_t *) malloc (sizeof(s_ezlopi_settings_device_settings_type_scalable_value_t));
+        memset(ezlopi_setting_properties->value.scalable_value, 0, sizeof(s_ezlopi_settings_device_settings_type_scalable_value_t));
+
+        ezlopi_setting_properties->value_defaut.scalable_value->value = 30.0;
+        ezlopi_setting_properties->value.scalable_value->scale = "decibel";
+        
+        if(ezlopi_nvs_read_float32(&settings_value, ezlopi_setting_properties->nvs_alias))
+        {
+            ezlopi_setting_properties->value.scalable_value->value = settings_value;
+        }
+        else
+        {
+            ezlopi_setting_properties->value.scalable_value->value = ezlopi_setting_properties->value_defaut.scalable_value->value;
         }      
         
     }

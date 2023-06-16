@@ -61,12 +61,19 @@ void ezlopi_device_settings_list(cJSON *cj_request, cJSON *cj_response)
                             cJSON_AddStringToObject(cj_properties, "value", registered_settings->properties->value.string_value);
                         }
                         else if(strcmp(registered_settings->properties->value_type, "rgb") == 0)
-                        {
+                        {                            
 
                         }       
                         else if(strcmp(registered_settings->properties->value_type, "scalable") == 0)
                         {
+                            cJSON *cj_value = cJSON_CreateObject();
 
+                            if(cj_value)
+                            {
+                                cJSON_AddStringToObject(cj_value, "scale", registered_settings->properties->value.scalable_value->scale);
+                                cJSON_AddNumberToObject(cj_value, "value", registered_settings->properties->value.scalable_value->value);
+                                cJSON_AddItemToObject(cj_properties, "value", cj_value);
+                            }                            
                         }
                         else 
                         {

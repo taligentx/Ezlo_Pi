@@ -44,6 +44,8 @@ extern "C"
     uint8_t ezlopi_nvs_read_int32(int32_t *i, const char * key_name);
     uint8_t ezlopi_nvs_write_bool(bool b, const char * key_name);
     uint8_t ezlopi_nvs_read_bool(bool * b, const char * key_name);  
+    uint8_t ezlopi_nvs_write_float32(float f, const char* key_name);
+    uint8_t ezlopi_nvs_read_float32(float* f, const char* key_name);
 
 #ifdef __cplusplus
 }

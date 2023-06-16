@@ -175,7 +175,18 @@ void _ezlopi_device_settings_value_set(uint32_t id, void * args)
                     }       
                     else if(strcmp(settings_current->properties->value_type, "scalable") == 0)
                     {
+                        cJSON * value_root = cJSON_GetObjectItem(cjson_params, "value");
+                        if(value_root) 
+                        {
+                            cJSON * value =  cJSON_GetObjectItem(value_root, "value");
+                            if(value)
+                            {
+                                TRACE_D("scaled value : %f", (float)value->valuedouble);
+                                settings_current->properties->value.scalable_value->value = (float)value->valuedouble;
+                                ezlopi_nvs_write_float32(settings_current->properties->value.scalable_value->value, settings_current->properties->nvs_alias);
 
+                            }
+                        }
                     }
                     else 
                     {
@@ -224,6 +235,9 @@ void _ezlopi_device_settings_reset_settings_id(uint32_t id)
                 }       
                 else if(strcmp(configured_settings_current->properties->value_type, "scalable") == 0)
                 {
+                    configured_settings_current->properties->value.scalable_value->value = configured_settings_current->properties->value_defaut.scalable_value->value;
+                    ezlopi_nvs_write_float32(configured_settings_current->properties->value.scalable_value->value, configured_settings_current->properties->nvs_alias);
+                    
                 }
                 else 
                 {
@@ -252,11 +266,13 @@ void _ezlopi_device_settings_reset_device_id(uint32_t id)
                 {
 
                     configured_settings_current->properties->value.bool_value = configured_settings_current->properties->value_defaut.bool_value;
+                    ezlopi_nvs_write_bool(configured_settings_current->properties->value.bool_value, configured_settings_current->properties->nvs_alias);
                                                                     
                 }
                 else if(strcmp(configured_settings_current->properties->value_type, "int") == 0)
                 {
                     configured_settings_current->properties->value.int_value = configured_settings_current->properties->value_defaut.int_value;
+                    ezlopi_nvs_write_int32(configured_settings_current->properties->value.int_value, configured_settings_current->properties->nvs_alias);
 
                 }
                 else if(strcmp(configured_settings_current->properties->value_type, "string") == 0)
@@ -269,6 +285,8 @@ void _ezlopi_device_settings_reset_device_id(uint32_t id)
                 }       
                 else if(strcmp(configured_settings_current->properties->value_type, "scalable") == 0)
                 {
+                    configured_settings_current->properties->value.scalable_value->value = configured_settings_current->properties->value_defaut.scalable_value->value;
+                    ezlopi_nvs_write_float32(configured_settings_current->properties->value.scalable_value->value, configured_settings_current->properties->nvs_alias);
                 }
                 else 
                 {

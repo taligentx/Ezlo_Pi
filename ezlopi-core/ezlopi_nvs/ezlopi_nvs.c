@@ -479,6 +479,49 @@ uint8_t ezlopi_nvs_read_int32(int32_t *i, const char * key_name) {
     return ret;
 }
 
+uint8_t ezlopi_nvs_write_float32(float f, const char* key_name)
+{
+    uint8_t ret = 0;
+    if (ezlopi_nvs_handle)
+    {
+        uint32_t value;
+        memcpy(&value, &f, sizeof(uint32_t));
+        
+        esp_err_t err = nvs_set_u32(ezlopi_nvs_handle, key_name, value);
+        if (err != ESP_OK)
+        {
+            TRACE_W("nvs_set_u32 - error: %s", esp_err_to_name(err));
+        }
+        else
+        {
+            ret = 1;
+        }
+    }
+    return ret;
+}
+
+uint8_t ezlopi_nvs_read_float32(float* f, const char* key_name)
+{
+    uint8_t ret = 0;
+    if (ezlopi_nvs_handle)
+    {
+        uint32_t value;
+        
+        esp_err_t err = nvs_get_u32(ezlopi_nvs_handle, key_name, &value);
+        if (err == ESP_OK)
+        {
+            memcpy(f, &value, sizeof(float));
+            ret = 1;
+        }
+        else
+        {
+            TRACE_W("nvs_get_u32 - error: %s", esp_err_to_name(err));
+        }
+    }
+    return ret;
+}
+
+
 uint8_t ezlopi_nvs_write_bool(bool b, const char * key_name)
 {
     uint8_t ret = 0;
