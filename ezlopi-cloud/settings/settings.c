@@ -50,7 +50,14 @@ void ezlopi_device_settings_list(cJSON *cj_request, cJSON *cj_response)
                         }
                         else if(strcmp(registered_settings->properties->value_type, "bool") == 0)
                         {
-
+                            if(registered_settings->properties->value.bool_value)
+                            {
+                                cJSON_AddTrueToObject(cj_properties, "value");
+                            }
+                            else 
+                            {
+                                cJSON_AddFalseToObject(cj_properties, "value");
+                            }
                         }
                         else if(strcmp(registered_settings->properties->value_type, "int") == 0)
                         {
