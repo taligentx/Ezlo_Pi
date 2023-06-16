@@ -146,17 +146,13 @@ static int device_0001_digitalOut_generic_prepare(void *arg)
     s_ezlopi_device_settings_properties_t * device_settings_0001_digitalOut_generic_device_properties = NULL;
     s_ezlopi_device_settings_properties_t * device_settings_0001_digitalOut_sound_device_properties = NULL;
     s_ezlopi_device_settings_properties_t * device_settings_0001_digitalOut_perfrm_device_properties = NULL;
-    TRACE_E(" I am here !");
+
     if ((NULL == device_0001_digitalOut_generic_device_properties) && (NULL != cjson_device))
     {
-        TRACE_E(" I am here !");
         device_0001_digitalOut_generic_device_properties = device_0001_digitalOut_generic_item(cjson_device);
 
         if (device_0001_digitalOut_generic_device_properties)
-        {
-            TRACE_E(" I am here !");
-            
-            
+        {            
             // TODO Need to implement status
 
             if (0 == ezlopi_devices_list_add(prep_arg->device, device_0001_digitalOut_generic_device_properties, NULL))
@@ -165,7 +161,7 @@ static int device_0001_digitalOut_generic_prepare(void *arg)
             }
             else
             {
-                #if 1
+
                 device_settings_0001_digitalOut_generic_device_properties = ezlopi_device_settings_broadcast_interval_prepare_properties();
                 device_settings_0001_digitalOut_sound_device_properties = ezlopi_device_settings_sound_threshold_prepare_properties();
                 device_settings_0001_digitalOut_perfrm_device_properties = ezlopi_device_settings_performance_flag_prepare_properties();
@@ -207,8 +203,6 @@ static int device_0001_digitalOut_generic_prepare(void *arg)
                         ret = 1;
                     } 
                 }
-                #endif
-                // ret = 1;
             }
         }
     }

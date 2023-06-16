@@ -26,10 +26,8 @@ void ezlopi_device_settings_list(cJSON *cj_request, cJSON *cj_response)
 
             while(NULL != registered_settings) 
             {
-                TRACE_E("Here");
                 if(NULL != registered_settings->properties)
                 {
-                    TRACE_E("Here");
                     cJSON *cj_properties = cJSON_CreateObject();
                     if (cj_properties)
                     {
@@ -181,56 +179,7 @@ void ezlopi_device_settings_reset(cJSON *cj_request, cJSON *cj_response)
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-void settings_list(cJSON *cj_request, cJSON *cj_response) {
+void ezlopi_settings_list(cJSON *cj_request, cJSON *cj_response) {
 
     
     cJSON_AddItemReferenceToObject(cj_response, ezlopi_id_str, cJSON_GetObjectItem(cj_request, ezlopi_id_str));
@@ -295,7 +244,7 @@ void settings_list(cJSON *cj_request, cJSON *cj_response) {
     }
 }
 
-void settings_value_set(cJSON *cj_request, cJSON *cj_response)
+void ezlopi_settings_value_set(cJSON *cj_request, cJSON *cj_response)
 {
     cJSON_AddItemReferenceToObject(cj_response, ezlopi_id_str, cJSON_GetObjectItem(cj_request, ezlopi_id_str));
     cJSON_AddItemReferenceToObject(cj_response, ezlopi_key_method_str, cJSON_GetObjectItem(cj_request, ezlopi_key_method_str));
@@ -326,7 +275,6 @@ void settings_value_set(cJSON *cj_request, cJSON *cj_response)
             char *settings_val_str = cJSON_GetStringValue(key_settings_value);
             TRACE_W("settings_val_str: %s", settings_val_str);
             ezlopi_settings_modify_setting(settings_name, settings_val_str);
-
         }
         else 
         {
@@ -335,7 +283,7 @@ void settings_value_set(cJSON *cj_request, cJSON *cj_response)
     }
 }
 
-void settings_value_set_response(cJSON *cj_request, cJSON *cj_response)
+void ezlopi_settings_value_set_response(cJSON *cj_request, cJSON *cj_response)
 {
     cJSON_AddItemReferenceToObject(cj_response, ezlopi_id_str, cJSON_GetObjectItem(cj_request, ezlopi_id_str));
     cJSON_AddItemReferenceToObject(cj_response, ezlopi_key_method_str, cJSON_GetObjectItem(cj_request, ezlopi_key_method_str));

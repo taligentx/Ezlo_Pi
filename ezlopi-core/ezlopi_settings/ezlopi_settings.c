@@ -9,7 +9,7 @@
 #include "cJSON.h"
 
 
-s_ezlopi_hub_settings_t ezlopi_settings_list[] = {
+static s_ezlopi_hub_settings_t ezlopi_settings_list[] = {
     {
         .enum_values = {"mmddyy", "ddmmyy"},
         .name = "date.format",
@@ -100,29 +100,23 @@ static l_ezlopi_device_settings_t *ezlopi_device_settings_list_create(s_ezlopi_d
         memset(settings_device_list, 0, sizeof(l_ezlopi_device_settings_t));
         settings_device_list->properties = properties;
         settings_device_list->next = NULL;
-        TRACE_E("Here ");
+
         if (user_arg)
-            {
+        {
             settings_device_list->user_arg = user_arg;
         }
     } 
     else 
     {
-        TRACE_E("Here ");
+
     }
     return settings_device_list;
 }
+
 void _ezlopi_device_settings_value_set(uint32_t id, void * args)
 {
     int ret = 0;
     cJSON *cjson_params = (cJSON *)args;
-
-    char* jsonStr = cJSON_PrintUnformatted(cjson_params);
-    TRACE_I("%s\n", jsonStr);
-
-    // Free resources
-    cJSON_free(jsonStr);
-
     if (NULL != cjson_params)
     {
         
@@ -309,72 +303,28 @@ void ezlopi_device_settings_print_settings(l_ezlopi_device_settings_t *head) {
     while (current != NULL) {
         s_ezlopi_device_settings_properties_t *properties = current->properties;
 
-        printf("ID: %u\n", properties->id);
-        printf("Device ID: %u\n", properties->device_id);
-        if(properties->label) printf("Label: %s\n", properties->label);
-        if(properties->description) printf("Description: %s\n", properties->description);
-        if(properties->status) printf("Status: %s\n", properties->status);
-        if(properties->value_type) printf("Value Type: %s\n", properties->value_type);
-        if(properties->nvs_alias) printf("NVS Alias: %s\n", properties->nvs_alias);
+        TRACE_I("ID: %u\n", properties->id);
+        TRACE_I("Device ID: %u\n", properties->device_id);
+        if(properties->label) TRACE_I("Label: %s\n", properties->label);
+        if(properties->description) TRACE_I("Description: %s\n", properties->description);
+        if(properties->status) TRACE_I("Status: %s\n", properties->status);
+        if(properties->value_type) TRACE_I("Value Type: %s\n", properties->value_type);
+        if(properties->nvs_alias) TRACE_I("NVS Alias: %s\n", properties->nvs_alias);
 
         // Print value based on value type
         if (strcmp(properties->value_type, "string") == 0) {
-            printf("String Value: %s\n", properties->value.string_value);
+            TRACE_I("String Value: %s\n", properties->value.string_value);
         } else if (strcmp(properties->value_type, "int") == 0) {
-            printf("Integer Value: %d\n", properties->value.int_value);
+            TRACE_I("Integer Value: %d\n", properties->value.int_value);
         } else if (strcmp(properties->value_type, "bool") == 0) {
-            printf("Boolean Value: %s\n", properties->value.bool_value ? "true" : "false");
+            TRACE_I("Boolean Value: %s\n", properties->value.bool_value ? "true" : "false");
         } else {
-            printf("Unknown value type\n");
+            TRACE_I("Unknown value type\n");
         }
 
         current = current->next;
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

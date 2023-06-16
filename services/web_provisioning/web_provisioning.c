@@ -94,14 +94,14 @@ static const s_method_list_v2_t method_list_v2[] = {
     {.method_name = "hub.network.get", .method = network_get, .updater = NULL},
     {.method_name = "hub.firmware.update.start", .method = firmware_update_start, .updater = NULL},
     {.method_name = "cloud.firmware.info.get", .method = firmware_info_get, .updater = NULL},
-    {.method_name = "hub.settings.list", .method = settings_list, .updater = NULL},
+    {.method_name = "hub.settings.list", .method = ezlopi_settings_list, .updater = NULL},
     {.method_name = "hub.device.settings.list", .method = ezlopi_device_settings_list, .updater = NULL},
     {.method_name = "hub.reboot", .method = __hub_reboot, .updater = NULL},
 
     // // /** Setter functions **/
     {.method_name = "hub.item.value.set", .method = items_set_value, .updater = items_update},
     // {.method_name = "hub.device.name.set", .method = devices_name_set, .updater = NULL},
-    {.method_name = "hub.setting.value.set", .method = settings_value_set, .updater = settings_value_set_response},
+    {.method_name = "hub.setting.value.set", .method = ezlopi_settings_value_set, .updater = ezlopi_settings_value_set_response},
     {.method_name = "hub.device.setting.value.set", .method = ezlopi_device_settings_value_set, .updater = NULL},
     {.method_name = "hub.device.setting.reset", .method = ezlopi_device_settings_reset, .updater = NULL},    
     {.method_name = "registered", .method = registered, .updater = NULL}, // called only once so its in last

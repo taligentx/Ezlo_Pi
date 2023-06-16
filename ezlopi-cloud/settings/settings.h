@@ -14,10 +14,10 @@ extern "C"
     void ezlopi_device_settings_reset(cJSON *cj_request, cJSON *cj_response);
 
 
-    void settings_list(cJSON *cj_request, cJSON *cj_response);
-    void settings_value_set(cJSON *cj_request, cJSON *cj_response);
-    void settings_value_set_response(cJSON *cj_request, cJSON *cj_response);
-    void settings_updated(cJSON *cj_request, cJSON *cj_response);
+    void ezlopi_settings_list(cJSON *cj_request, cJSON *cj_response);
+    void ezlopi_settings_value_set(cJSON *cj_request, cJSON *cj_response);
+    void ezlopi_settings_value_set_response(cJSON *cj_request, cJSON *cj_response);
+    void ezlopi_settings_updated(cJSON *cj_request, cJSON *cj_response);
 
 #ifdef __cplusplus
 }
