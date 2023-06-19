@@ -7,7 +7,7 @@
 // TODO add include for 004
 #include "sensor_0005_I2C_MPU6050.h"
 #include "sensor_0006_I2C_ADXL345.h"
-// TODO Include for 0007 - 0011
+#include "sensor_0007_I2C_GY271.h"
 #include "sensor_0008_I2C_LTR303ALS.h"
 #include "device_0009_other_RMT_SK6812.h"
 #include "sensor_0010_I2C_BME680.h"
@@ -26,6 +26,7 @@
 #include "sensor_0025_digitalIn_LDR.h"
 #include "sensor_0026_ADC_LDR.h"
 #include "sensor_0027_ADC_waterLeak.h"
+#include "sensor_0028_ADC_GY61.h"
 #include "sensor_0029_I2C_GXHTC3.h"
 #include "sensor_0030_oneWire_DS18B20.h"
 #include "sensor_0031_other_JSNSR04T.h"
@@ -91,12 +92,12 @@ static s_ezlopi_device_t device_array[] = {
         },
     #endif
 
-    // #ifdef EZLOPI_SENSOR_0007_I2C_GY271
-    //     {
-    //         .id = EZLOPI_SENSOR_0007_I2C_GY271,
-    //         .func = 
-    //     },
-    // #endif
+    #ifdef EZLOPI_SENSOR_0007_I2C_GY271
+        {
+            .id = EZLOPI_SENSOR_0007_I2C_GY271,
+            .func = sensor_0007_I2C_GY271
+        },
+     #endif
     #ifdef EZLOPI_SENSOR_0008_I2C_LTR303AL
         {
             .id = EZLOPI_SENSOR_0008_I2C_LTR303AL,
@@ -106,7 +107,7 @@ static s_ezlopi_device_t device_array[] = {
     #ifdef EZLOPI_DEVICE_0009_OTHER_RMT_SK6812
         {
             .id = EZLOPI_DEVICE_0009_OTHER_RMT_SK6812,
-            .func = device_0009_other_RMT_SK6812,
+            .func = device_0009_other_RMT_SK6812
         },
     #endif
     #ifdef EZLOPI_SENSOR_0010_I2C_BME680
@@ -121,12 +122,12 @@ static s_ezlopi_device_t device_array[] = {
     //         .func = 
     //     },
     // #endif     
-    // #ifdef EZLOPI_SENSOR_0012_I2C_BME280
-    //     {
-    //         .id = EZLOPI_SENSOR_0012_I2C_BME280,
-    //         .func = sensor_0012_I2C_BME280,
-    //     },
-    // #endif    
+    #ifdef EZLOPI_SENSOR_0012_I2C_BME280
+        {
+            .id = EZLOPI_SENSOR_0012_I2C_BME280,
+            .func = sensor_0012_I2C_BME280,
+        },
+    #endif    
     // #ifdef EZLOPI_SENSOR_0013_SPI_BME280
     //     {
     //         .id = EZLOPI_SENSOR_0013_SPI_BME280,
@@ -152,12 +153,10 @@ static s_ezlopi_device_t device_array[] = {
         },
     #endif
 
-    #ifdef EZLOPI_SENSOR_0017_ADC_POTENTIOMETER
-        {
-            .id = EZLOPI_SENSOR_0017_ADC_POTENTIOMETER,
-            .func = potentiometer,
-        },
-    #endif
+#ifdef EZLOPI_SENSOR_0007_I2C_GY271
+    {.id = EZLOPI_SENSOR_0007_I2C_GY271,
+     .func = sensor_0007_I2C_GY271},
+#endif
 
     #ifdef EZLOPI_SENSOR_0018_OTHER_INTERNAL_HALL_EFFECT
         {

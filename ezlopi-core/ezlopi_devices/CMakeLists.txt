@@ -22,6 +22,7 @@ idf_component_register(
         device_0003_digitalOut_plug
         sensor_0005_I2C_MPU6050
         sensor_0006_I2C_ADXL345  
+        sensor_0007_I2C_GY271
         sensor_0012_I2C_BME280      
         sensor_0008_I2C_LTR303ALS
         device_0009_other_RMT_SK6812
@@ -40,6 +41,7 @@ idf_component_register(
         sensor_0025_digitalIn_LDR
         sensor_0026_ADC_LDR
         sensor_0027_ADC_waterLeak
+        sensor_0028_ADC_GY61 
         sensor_0029_I2C_GXHTC3
         sensor_0030_oneWire_DS18B20
         sensor_0031_other_JSNSR04T

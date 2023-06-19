@@ -31,7 +31,7 @@ static void device_0001_digitalOut_generic_toggle_gpio(s_ezlopi_device_propertie
 
 
 int device_0001_digitalOut_generic(e_ezlopi_actions_t action, s_ezlopi_device_properties_t *properties, void *arg, void *user_arg)
-{
+    {
     int ret = 0;
 
     switch (action)

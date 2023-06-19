@@ -6,7 +6,6 @@
 #include <cJSON.h>
 #include "ezlopi_actions.h"
 #include "ezlopi_devices.h"
-#include "sdkconfig.h"
 
 
 #define EZLOPI_SENSOR_NONE                                              0
@@ -17,12 +16,12 @@
 #define EZLOPI_SENSOR_0004_DIGITAL_IN_SWITCH                            4
 
 #define EZLOPI_SENSOR_0005_I2C_MPU6050                                  5
-#define EZLOPI_SENSOR_0006_I2C_ADXL345                                 6
-#define EZLOPI_SENSOR_0007_I2C_GY271                                   7
-#define EZLOPI_SENSOR_0008_I2C_LTR303AL                                8
-#define EZLOPI_DEVICE_0009_OTHER_RMT_SK6812                            9
-#define EZLOPI_SENSOR_0010_I2C_BME680                                  10
-#define EZLOPI_SENSOR_0011_I2C_MAX30100                                11
+#define EZLOPI_SENSOR_0006_I2C_ADXL345                                  6
+#define EZLOPI_SENSOR_0007_I2C_GY271                                    7
+#define EZLOPI_SENSOR_0008_I2C_LTR303AL                                 8
+#define EZLOPI_DEVICE_0009_OTHER_RMT_SK6812                             9
+#define EZLOPI_SENSOR_0010_I2C_BME680                                   10
+#define EZLOPI_SENSOR_0011_I2C_MAX30100                                 11
 #define EZLOPI_SENSOR_0012_I2C_BME280                                   12
 #define EZLOPI_SENSOR_0013_SPI_BME280                                   13
 #define EZLOPI_SENSOR_0014_UART_PMS5003                                 14
