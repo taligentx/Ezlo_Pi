@@ -1,6 +1,5 @@
 #include "cJSON.h"
 #include "trace.h"
-#include "frozen.h"
 #include "ezlopi_actions.h"
 #include "ezlopi_timer.h"
 #include "items.h"

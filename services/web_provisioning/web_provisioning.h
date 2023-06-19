@@ -2,7 +2,6 @@
 #define __WEB_PROVISIONING_H__
 
 #include <string.h>
-#include "frozen.h"
 #include "cJSON.h"
 
 #ifdef __cplusplus

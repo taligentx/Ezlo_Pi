@@ -3,7 +3,6 @@
 #include "sensor_0031_other_JSNSR04T.h"
 #include "cJSON.h"
 #include "trace.h"
-#include "frozen.h"
 #include "ezlopi_actions.h"
 #include "ezlopi_timer.h"
 #include "items.h"

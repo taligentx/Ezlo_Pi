@@ -21,6 +21,7 @@ int ezlopi_device_value_updated_from_device(s_ezlopi_device_properties_t *device
                     {
                         ret = web_provisioning_send_to_nma_websocket(cj_response, TRACE_TYPE_B);
                         cJSON_Delete(cj_response);
+                        break;
                     }
                 }
             }

@@ -3,7 +3,6 @@
 #include "sensor_0021_UART_MB1013.h"
 #include "cJSON.h"
 #include "trace.h"
-#include "frozen.h"
 #include "ezlopi_actions.h"
 #include "ezlopi_timer.h"
 #include "items.h"

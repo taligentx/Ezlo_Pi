@@ -18,10 +18,10 @@ extern "C"
 #define EZLOPI_DEVICE_TYPE_SOUND_SENSOR 3
 #define EZLOPI_DEVICE_TYPE_AMBIENT_TRACKER_PRO 4
 
-#define EZLOPI_DEVICE_TYPE EZLOPI_DEVICE_TYPE_TEST_DEVICE
+#define EZLOPI_DEVICE_TYPE EZLOPI_GENERIC
+// #define EZLOPI_DEVICE_TYPE EZLOPI_TEST_DEVICE
 
 #include "esp_partition.h"
-#include "frozen.h"
 
 #define EZLOPI_FACTORY_INFO_V2_PARTITION_NAME "id"
 #define EZLOPI_FACTORY_INFO_V2_PARTITION_SIZE 0xF000 // 20480 // 20KB
@@ -156,6 +156,8 @@ typedef struct s_basic_factory_info
 #endif
 
     void print_factory_info_v2(void);
+    uint32_t ezlopi_factory_info_v2_get_provisioning_status(void);
+    const esp_partition_t *ezlopi_factory_info_v2_init(void);
     void ezlopi_factory_info_v2_free(void *arg);
     uint16_t ezlopi_factory_info_v2_get_version(void);
     char *ezlopi_factory_info_v2_get_name(void);
@@ -410,15 +412,19 @@ static const char *test_device_constant_config =
         \"cmd\": 3,\
         \"dev_detail\":\
         [\
-            {\
-                \"dev_name\": \"JSN-SR04T\",\
-                \"dev_type\": 10,\
-                \"id_item\": 31,\
+           {\
+                \"dev_name\": \"Switch 1\",\
+                \"dev_type\": 1,\
+                \"gpio_in\": -1,\
+                \"gpio_out\": 2,\
+                \"id_item\": 1,\
                 \"id_room\": \"\",\
-                \"gpio1\": 5,\
-                \"gpio2\": 4,\
-                \"en_gpio1\": true,\
-                \"en_gpio2\": true\
+                \"id_item\": 36,\
+                \"gpio_sda\": 18,\
+                \"gpio_scl\": 19,\
+                \"pullup_scl\": true,\
+                \"pullup_sda\": true,\
+                \"slave_addr\": 105\
             }\
         ],\
     \"dev_total\": 1}";
