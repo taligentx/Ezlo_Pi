@@ -2,7 +2,6 @@
 
 #include "devices.h"
 #include "trace.h"
-#include "frozen.h"
 #include "ezlopi_factory_info.h"
 #include "ezlopi_devices.h"
 #include "ezlopi_devices_list.h"
