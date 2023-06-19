@@ -43,8 +43,6 @@ void ezlopi_ble_service_provisioning_init(void)
 
     uuid.uuid.uuid16 = BLE_PROVISIONING_CHAR_UUID;
     uuid.len = ESP_UUID_LEN_16;
-    // permission = ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE;
-    // properties = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE;
     permission = ESP_GATT_PERM_WRITE;
     properties = ESP_GATT_CHAR_PROP_BIT_WRITE;
     ezlopi_ble_gatt_add_characteristic(g_provisioning_service, &uuid, permission, properties, NULL, provisioning_info_write_func, provisioning_info_exec_func);
@@ -307,11 +305,14 @@ static void provisioning_info_read_func(esp_gatt_value_t *value, esp_ble_gatts_c
 
 static void provisioning_info_exec_func(esp_gatt_value_t *value, esp_ble_gatts_cb_param_t *param)
 {
-    TRACE_D("Write execute function called.");
-    ezlopi_ble_buffer_accumulate_to_start(g_provisioning_linked_buffer);
-    ezlopi_process_provisioning_info(g_provisioning_linked_buffer->buffer, g_provisioning_linked_buffer->len);
-    ezlopi_ble_buffer_free_buffer(g_provisioning_linked_buffer);
-    g_provisioning_linked_buffer = NULL;
+    if (g_provisioning_linked_buffer)
+    {
+        TRACE_D("Write execute function called.");
+        ezlopi_ble_buffer_accumulate_to_start(g_provisioning_linked_buffer);
+        ezlopi_process_provisioning_info(g_provisioning_linked_buffer->buffer, g_provisioning_linked_buffer->len);
+        ezlopi_ble_buffer_free_buffer(g_provisioning_linked_buffer);
+        g_provisioning_linked_buffer = NULL;
+    }
 }
 
 static void ezlopi_process_provisioning_info(uint8_t *value, uint32_t len)
