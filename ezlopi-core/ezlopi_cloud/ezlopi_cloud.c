@@ -4,6 +4,7 @@ static uint32_t device_id = 0;
 static uint32_t item_id = 0;
 static uint32_t room_id = 0;
 static uint32_t gateway_id = 0;
+static uint32_t settings_id = 0;
 
 uint32_t ezlopi_cloud_generate_device_id(void)
 {
@@ -31,4 +32,11 @@ uint32_t ezlopi_cloud_generate_gateway_id(void)
     gateway_id = (0 == gateway_id) ? 0x40000001 : gateway_id + 1;
     // TRACE_D("gateway_id: %u\r\n", gateway_id);
     return gateway_id;
+}
+
+uint32_t ezlopi_cloud_generate_settings_id(void)
+{
+    settings_id = (0 == settings_id) ? 0x50000001 : settings_id + 1;
+    // TRACE_D("gateway_id: %u\r\n", gateway_id);
+    return settings_id;
 }

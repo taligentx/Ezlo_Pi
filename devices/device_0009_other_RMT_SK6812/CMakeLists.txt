@@ -1,6 +1,6 @@
 
 
-idf_component_register(SRCS "device_0009_other_RMT_SK6812.c" "SK6812_lib.c"
+idf_component_register(SRCS "device_0009_other_RMT_SK6812.c"
                         INCLUDE_DIRS "."
                         REQUIRES trace 
                         ezlopi_actions 

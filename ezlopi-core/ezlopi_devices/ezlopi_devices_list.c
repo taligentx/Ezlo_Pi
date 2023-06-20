@@ -5,6 +5,7 @@
 #include "device_0002_digitalOut_relay.h"
 #include "device_0003_digitalOut_plug.h"
 // TODO add include for 004
+// TODO add include for 004
 #include "sensor_0005_I2C_MPU6050.h"
 #include "sensor_0006_I2C_ADXL345.h"
 #include "sensor_0007_I2C_GY271.h"
@@ -14,7 +15,9 @@
 // TODO Include for 0011
 #include "sensor_0012_I2C_BME280.h"
 #include "sensor_0014_UART_PMS5003.h"
-#include "sensor_0019_digitalIn_PIR.h"
+#include "sensor_0012_I2C_BME280.h"
+#include "sensor_0016_oneWire_DHT22.h"
+#include "sensor_0017_ADC_potentiometer.h"
 #include "sensor_0018_internal_hall_effect.h"
 #include "sensor_0019_digitalIn_PIR.h"
 #include "device_0022_PWM_dimmable_lamp.h"
@@ -22,6 +25,7 @@
 #include "sensor_0021_UART_MB1013.h"
 #include "sensor_0024_other_HCSR04.h"
 #include "sensor_0023_digitalIn_touch_switch_TTP223B.h"
+#include "sensor_0024_other_HCSR04.h"
 #include "sensor_0025_digitalIn_LDR.h"
 #include "sensor_0026_ADC_LDR.h"
 #include "sensor_0027_ADC_waterLeak.h"
@@ -36,6 +40,7 @@
 #include "sensor_0032_ADC_soilMoisture.h"
 #include "sensor_0031_other_JSNSR04T.h"
 #include "sensor_0017_ADC_potentiometer.h"
+#include "device_0036_PWM_servo_MG996R.h"
 #include "device_0038_digitalOut_RGB.h"
 // #include "sensor_0039_I2C_MAX30102.h"
 
@@ -314,19 +319,18 @@ static s_ezlopi_device_t device_array[] = {
 // #endif
 
 #elif (EZLOPI_DEVICE_TYPE_SWITCH_BOX == EZLOPI_DEVICE_TYPE)
-#ifdef EZLOPI_DEVICE_0001_DIGITAL_OUT_LED
-    {
-        .id = EZLOPI_DEVICE_0001_DIGITAL_OUT_LED,
-        .func = device_0001_digitalOut_generic,
-    },
-#endif
-#ifdef EZLOPI_SENSOR_0029_I2C_GXHTC3
-    {
-        .id = EZLOPI_SENSOR_0029_I2C_GXHTC3,
-        .func = gxhtc3_rh_t_sensor,
-    },
-#endif
-
+    #ifdef EZLOPI_DEVICE_0001_DIGITAL_OUT_LED
+        {
+            .id = EZLOPI_DEVICE_0001_DIGITAL_OUT_LED,
+            .func = device_0001_digitalOut_generic,
+        },
+    #endif
+    #ifdef EZLOPI_SENSOR_0029_I2C_GXHTC3
+        {
+            .id = EZLOPI_SENSOR_0029_I2C_GXHTC3,
+            .func = sensor_0029_I2C_GXHTC3,
+        },
+    #endif
 #elif (EZLOPI_DEVICE_TYPE_AMBIENT_TRACKER_PRO == EZLOPI_DEVICE_TYPE)
 // #ifdef EZLOPI_DEVICE_0009_OTHER_RMT_SK6812
 //     {

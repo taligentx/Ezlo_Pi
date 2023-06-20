@@ -3,7 +3,6 @@
 #include "cJSON.h"
 #include "data.h"
 #include "trace.h"
-#include "frozen.h"
 #include "ezlopi_devices_list.h"
 #include "ezlopi_cloud_keywords.h"
 #include "ezlopi_cloud_methods_str.h"

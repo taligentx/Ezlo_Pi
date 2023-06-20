@@ -2,7 +2,6 @@
 
 #include "scenes.h"
 #include "trace.h"
-#include "frozen.h"
 #include "cJSON.h"
 #include "ezlopi_cloud_constants.h"
 

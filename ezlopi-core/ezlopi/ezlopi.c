@@ -36,6 +36,10 @@ void ezlopi_init(void)
     vTaskDelay(10);
     ezlopi_initialize_devices();
     vTaskDelay(10);
+
+    ezlopi_initialize_settings();
+    vTaskDelay(10);
+
     ezlopi_wifi_initialize();
     vTaskDelay(10);
 #if (EZLOPI_DEVICE_TYPE_AMBIENT_TRACKER_PRO == EZLOPI_DEVICE_TYPE)

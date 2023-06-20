@@ -4,7 +4,6 @@
 #include "network.h"
 #include "ezlopi_wifi.h"
 #include "trace.h"
-#include "frozen.h"
 
 #include "cJSON.h"
 #include "ezlopi_cloud_methods_str.h"
