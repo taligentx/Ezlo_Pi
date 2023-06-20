@@ -396,14 +396,13 @@ static const char *test_device_constant_config =
         \"dev_detail\":\
         [\
             {\
-                \"dev_type\": 8,\
-                \"dev_name\": \"GY271 Sensor\",\
+                \"dev_type\": 10,\
+                \"dev_name\": \"GY61 Sensor\",\
                 \"id_room\": \"\",\
-                \"id_item\": 7,\
-                \"gpio_sda\": 21,\
-                \"gpio_scl\": 22,\
-                \"pullup_scl\": true,\
-                \"pullup_sda\" : true\
+                \"id_item\": 28,\
+                \"gpio1\": 3,\
+                \"gpio2\": 4,\
+                \"gpio3\": 5\
             }\
         ],\
     \"dev_total\": 1}";
