@@ -18,8 +18,7 @@ extern "C"
 #define EZLOPI_DEVICE_TYPE_SOUND_SENSOR 3
 #define EZLOPI_DEVICE_TYPE_AMBIENT_TRACKER_PRO 4
 
-#define EZLOPI_DEVICE_TYPE EZLOPI_GENERIC
-// #define EZLOPI_DEVICE_TYPE EZLOPI_TEST_DEVICE
+#define EZLOPI_DEVICE_TYPE EZLOPI_DEVICE_TYPE_TEST_DEVICE
 
 #include "esp_partition.h"
 
@@ -413,15 +412,14 @@ static const char *test_device_constant_config =
         \"dev_detail\":\
         [\
             {\
-                \"dev_type\": 8,\
-                \"dev_name\": \"ADXL345\",\
+                \"dev_type\": 5,\
+                \"dev_name\": \"Backlight control\",\
                 \"id_room\": \"\",\
-                \"id_item\": 6,\
-                \"gpio_sda\": 19,\
-                \"gpio_scl\": 20,\
-                \"pullup_scl\": true,\
-                \"pullup_sda\": true,\
-                \"slave_addr\": 105\
+                \"id_item\": 9,\
+                \"gpio\": 47,\
+                \"duty_cycle\": 0,\
+                \"freq_hz\": 50,\
+                \"pwm_rsln\": 8\
             }\
         ],\
     \"dev_total\": 1}";

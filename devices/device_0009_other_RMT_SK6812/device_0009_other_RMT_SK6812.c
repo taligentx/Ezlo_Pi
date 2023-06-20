@@ -16,7 +16,9 @@
 #include "ezlopi_i2c_master.h"
 #include "ezlopi_spi_master.h"
 #include "device_0009_other_RMT_SK6812.h"
-#include "SK6812_lib.h"
+#include "led_strip.h"
+#include "driver/gpio.h"
+#include "color_codes.h"
 
 #define ADD_PROPERTIES_DEVICE_LIST(_properties, device_id, category, sub_category, item_name, value_type, cjson_device, sk6812_strip)         \
     {                                                                                                                                         \
@@ -28,7 +30,6 @@
     }
 
 static bool sk6812_led_strip_initialized = false;
-
 
 static s_ezlopi_device_properties_t *switch_properties = NULL;
 static s_ezlopi_device_properties_t *dimmer_properties = NULL;
@@ -79,7 +80,6 @@ int device_0009_other_RMT_SK6812(e_ezlopi_actions_t action, s_ezlopi_device_prop
     return ret;
 }
 
-
 static int ezlopi_sk6812_prepare(void *arg)
 {
     int ret = 0;
@@ -94,12 +94,12 @@ static int ezlopi_sk6812_prepare(void *arg)
             memset(sk6812_strip, 0, sizeof(led_strip_t));
             uint32_t device_id = ezlopi_cloud_generate_device_id();
 
-            ADD_PROPERTIES_DEVICE_LIST(switch_properties, device_id, category_dimmable_light, subcategory_dimmable_colored, ezlopi_item_name_switch, value_type_bool, prep_arg->cjson_device, sk6812_strip);
+            ADD_PROPERTIES_DEVICE_LIST(rgb_color_properties, device_id, category_dimmable_light, subcategory_dimmable_colored, ezlopi_item_name_rgbcolor, value_type_rgb, prep_arg->cjson_device, sk6812_strip);
             ADD_PROPERTIES_DEVICE_LIST(dimmer_properties, device_id, category_dimmable_light, subcategory_dimmable_colored, ezlopi_item_name_dimmer, value_type_int, prep_arg->cjson_device, sk6812_strip);
             ADD_PROPERTIES_DEVICE_LIST(dimmer_up_properties, device_id, category_dimmable_light, subcategory_dimmable_colored, ezlopi_item_name_dimmer_up, value_type_int, prep_arg->cjson_device, sk6812_strip);
             ADD_PROPERTIES_DEVICE_LIST(dimmer_down_properties, device_id, category_dimmable_light, subcategory_dimmable_colored, ezlopi_item_name_dimmer_down, value_type_int, prep_arg->cjson_device, sk6812_strip);
             ADD_PROPERTIES_DEVICE_LIST(dimmer_stop_properties, device_id, category_dimmable_light, subcategory_dimmable_colored, ezlopi_item_name_dimmer_stop, value_type_int, prep_arg->cjson_device, sk6812_strip);
-            ADD_PROPERTIES_DEVICE_LIST(rgb_color_properties, device_id, category_dimmable_light, subcategory_dimmable_colored, ezlopi_item_name_rgbcolor, value_type_rgb, prep_arg->cjson_device, sk6812_strip);
+            ADD_PROPERTIES_DEVICE_LIST(switch_properties, device_id, category_dimmable_light, subcategory_dimmable_colored, ezlopi_item_name_switch, value_type_bool, prep_arg->cjson_device, sk6812_strip);
         }
     }
     return ret;
@@ -139,7 +139,7 @@ static s_ezlopi_device_properties_t *ezlopi_sk6812_prepare_properties(uint32_t d
             {
                 sk6812_properties->interface_type = EZLOPI_DEVICE_INTERFACE_DIGITAL_INPUT;
                 sk6812_properties->interface.gpio.gpio_in.enable = true;
-                sk6812_properties->interface.gpio.gpio_in.gpio_num = 47;
+                CJSON_GET_VALUE_INT(cjson_device, "gpio", sk6812_properties->interface.gpio.gpio_in.gpio_num);
                 sk6812_properties->interface.gpio.gpio_in.interrupt = false;
                 sk6812_properties->interface.gpio.gpio_in.invert = false;
                 sk6812_properties->interface.gpio.gpio_in.mode = GPIO_MODE_INPUT;
@@ -186,11 +186,24 @@ static int ezlopi_sk6812_init(s_ezlopi_device_properties_t *properties)
     led_strip_t *sk6812_strip = (led_strip_t *)properties->user_arg;
     if ((!sk6812_led_strip_initialized) && (NULL != sk6812_strip))
     {
-        sk6812_setup(sk6812_strip);
-        sk6812_set_color(sk6812_strip, WHITE);
-        // int dimmable_value = (int)((properties->interface.pwm.duty_cycle * 255) / 100);
-        sk6812_set_brightness(sk6812_strip, 255);
-        sk6812_show(sk6812_strip);
+
+        sk6812_strip->type = LED_STRIP_SK6812;
+        sk6812_strip->length = 10;
+        sk6812_strip->gpio = properties->interface.pwm.gpio_num;
+        sk6812_strip->buf = NULL;
+        sk6812_strip->brightness = 255;
+        sk6812_strip->channel = RMT_CHANNEL_0;
+
+        led_strip_install();
+        led_strip_init(sk6812_strip);
+        rgb_t color = {
+            .red = 0,
+            .green = 255,
+            .blue = 0,
+        };
+        led_strip_fill(sk6812_strip, 0, sk6812_strip->length, color);
+        led_strip_set_brightness(sk6812_strip, 255);
+        led_strip_flush(sk6812_strip);
         sk6812_led_strip_initialized = true;
     }
     return ret;
@@ -199,10 +212,6 @@ static int ezlopi_sk6812_init(s_ezlopi_device_properties_t *properties)
 static int ezlopi_sk6812_set_value_cjson(s_ezlopi_device_properties_t *properties, void *arg)
 {
     int ret = 0;
-
-    int red = 0;
-    int blue = 0;
-    int green = 0;
     static uint8_t previous_brightness = 0;
 
     led_strip_t *sk6812_strip = (led_strip_t *)properties->user_arg;
@@ -210,18 +219,23 @@ static int ezlopi_sk6812_set_value_cjson(s_ezlopi_device_properties_t *propertie
 
     if ((NULL != cjson_params) && (NULL != sk6812_strip))
     {
+
         if (ezlopi_item_name_rgbcolor == properties->ezlopi_cloud.item_name)
         {
             cJSON *cjson_params_color_values = cJSON_GetObjectItem(cjson_params, "value");
 
-            CJSON_GET_VALUE_INT(cjson_params_color_values, "red", red);
-            CJSON_GET_VALUE_INT(cjson_params_color_values, "green", green);
-            CJSON_GET_VALUE_INT(cjson_params_color_values, "blue", blue);
+            rgb_t color = {
+                .red = 0,
+                .green = 0,
+                .blue = 0,
+            };
 
-            uint32_t rgb_combined = (red << 16) | (green << 8) | (blue);
-            // TRACE_B("green => %d, blue => %d, red => %d", green, blue, red);
-            sk6812_set_color(sk6812_strip, rgb_combined);
-            sk6812_show(sk6812_strip);
+            CJSON_GET_VALUE_INT(cjson_params_color_values, "red", color.red);
+            CJSON_GET_VALUE_INT(cjson_params_color_values, "green", color.green);
+            CJSON_GET_VALUE_INT(cjson_params_color_values, "blue", color.blue);
+
+            led_strip_fill(sk6812_strip, 0, sk6812_strip->length, color);
+            led_strip_flush(sk6812_strip);
             ezlopi_device_value_updated_from_device(dimmer_properties);
         }
         else if (ezlopi_item_name_dimmer == properties->ezlopi_cloud.item_name)
@@ -229,10 +243,8 @@ static int ezlopi_sk6812_set_value_cjson(s_ezlopi_device_properties_t *propertie
             int dimmable_value_percentage = 0;
             CJSON_GET_VALUE_INT(cjson_params, "value", dimmable_value_percentage);
             int dimmable_value = (int)((dimmable_value_percentage * 255) / 100);
-            // TRACE_B("dimmable_value_percentage is %d, dimmable_value is %d", dimmable_value_percentage, dimmable_value);
-            // previous_brightness = (0 == dimmable_value) ? 0 : previous_brightness;
-            sk6812_set_brightness(sk6812_strip, dimmable_value);
-            sk6812_show(sk6812_strip);
+            led_strip_set_brightness(sk6812_strip, dimmable_value);
+            led_strip_flush(sk6812_strip);
             ezlopi_device_value_updated_from_device(switch_properties);
         }
         else if (ezlopi_item_name_switch == properties->ezlopi_cloud.item_name)
@@ -240,11 +252,9 @@ static int ezlopi_sk6812_set_value_cjson(s_ezlopi_device_properties_t *propertie
             int led_state = 0;
             CJSON_GET_VALUE_INT(cjson_params, "value", led_state);
             previous_brightness = (false == led_state) ? sk6812_strip->brightness : previous_brightness;
-            // int brightness_value = (false == led_state) ? 0 : previous_brightness;
             int brightness_value = (false == led_state) ? 0 : ((0 == previous_brightness) ? 255 : previous_brightness);
-            // TRACE_D("Brightness is %d", brightness_value);
-            sk6812_set_brightness(sk6812_strip, brightness_value);
-            sk6812_show(sk6812_strip);
+            led_strip_set_brightness(sk6812_strip, brightness_value);
+            led_strip_flush(sk6812_strip);
             ezlopi_device_value_updated_from_device(dimmer_properties);
         }
         else
@@ -286,13 +296,11 @@ static int ezlopi_sk6812_get_value(s_ezlopi_device_properties_t *properties, voi
         else if (ezlopi_item_name_dimmer == properties->ezlopi_cloud.item_name)
         {
             properties->interface.pwm.duty_cycle = (int)ceil(((sk6812_strip->brightness * 100.0) / 255.0));
-            // TRACE_B("dimmable_value_percentage is %d, dimmable_value is %d", properties->interface.pwm.duty_cycle, sk6812_strip->brightness);
             cJSON_AddNumberToObject(cjson_properties, "value", properties->interface.pwm.duty_cycle);
         }
         else if (ezlopi_item_name_switch == properties->ezlopi_cloud.item_name)
         {
             properties->interface.gpio.gpio_in.value = (0 == sk6812_strip->brightness) ? 0 : 1;
-            // TRACE_B("gpio in %d, brightness %d", properties->interface.gpio.gpio_in.value, sk6812_strip->brightness);
             cJSON_AddBoolToObject(cjson_properties, "value", properties->interface.gpio.gpio_in.value);
         }
     }
