@@ -29,7 +29,7 @@ void devices_list(cJSON *cj_request, cJSON *cj_response)
                     if (cj_properties)
                     {
                         char tmp_string[64];
-                        snprintf(tmp_string, sizeof(tmp_string), "%016llx", registered_devices->properties->ezlopi_cloud.device_id);
+                        snprintf(tmp_string, sizeof(tmp_string), "%08x", registered_devices->properties->ezlopi_cloud.device_id);
                         cJSON_AddStringToObject(cj_properties, "_id", tmp_string);
                         cJSON_AddStringToObject(cj_properties, "deviceTypeId", "ezlopi");
                         cJSON_AddStringToObject(cj_properties, "parentDeviceId", "");

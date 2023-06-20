@@ -99,7 +99,7 @@ static int device_0001_digitalOut_generic_set_value(s_ezlopi_device_properties_t
 
         TRACE_I("item_name: %s", properties->ezlopi_cloud.item_name);
         TRACE_I("gpio_num: %d", properties->interface.gpio.gpio_out.gpio_num);
-        TRACE_I("item_id: %lld", properties->ezlopi_cloud.item_id);
+        TRACE_I("item_id: %d", properties->ezlopi_cloud.item_id);
         TRACE_I("prev value: %d", properties->interface.gpio.gpio_out.value);
         TRACE_I("cur value: %d", value);
 

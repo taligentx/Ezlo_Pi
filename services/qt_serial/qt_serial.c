@@ -28,6 +28,7 @@
 #include "version.h"
 #include "ezlopi_wifi.h"
 #include "ezlopi_system_info.h"
+#include "mac_uuid.h"
 
 static const int RX_BUF_SIZE = 3096;
 
@@ -191,16 +192,22 @@ static void qt_serial_get_info()
         cJSON_AddNumberToObject(get_info, "v_type", V_TYPE);
         cJSON_AddNumberToObject(get_info, "build", BUILD);
         cJSON_AddStringToObject(get_info, "chip", CONFIG_IDF_TARGET);
-        cJSON_AddNumberToObject(get_info, "v_idf", ESP_IDF_VERSION);
+        cJSON_AddStringToObject(get_info, "v_idf", esp_get_idf_version());
         cJSON_AddNumberToObject(get_info, "uptime", xTaskGetTickCount());
         cJSON_AddNumberToObject(get_info, "build_date", BUILD_DATE);
         cJSON_AddNumberToObject(get_info, "boot_count", ezlopi_system_info_get_boot_count());
         cJSON_AddNumberToObject(get_info, "boot_reason", esp_reset_reason());
         uint8_t base_mac[6];
-        esp_read_mac(base_mac, ESP_MAC_WIFI_STA);
-        dump("mac", base_mac, 0, 6);
-        uint64_t long_mac = 0xFFFFFFFFFFFFULL & ((base_mac[0] & 0xFFULL) | ((base_mac[1] & 0xFFULL) << 8) | ((base_mac[2] & 0xFFULL) << 16) | ((base_mac[3] & 0xFFULL) << 24) | ((base_mac[4] & 0xFFULL) << 32) | ((base_mac[5] & 0xFFULL) << 40));
-        cJSON_AddNumberToObject(get_info, "mac", long_mac);
+        esp_read_mac(base_mac, ESP_MAC_BT);
+        char mac_string[32];
+        snprintf(mac_string, sizeof(mac_string), "%02x:%02x:%02x:%02x:%02x:%02x",
+                 mac_string[0], mac_string[1], mac_string[2], mac_string[3], mac_string[4], mac_string[5]);
+        cJSON_AddStringToObject(get_info, "mac", mac_string);
+       
+        char ezpi_uuid[50];
+        ezlopi_generate_UUID(ezpi_uuid);
+        cJSON_AddStringToObject(get_info, "uuid_dev", ezpi_uuid);
+
         cJSON_AddStringToObject(get_info, "uuid", controller_uuid);
         cJSON_AddStringToObject(get_info, "uuid_prov", provisioning_uuid);
         cJSON_AddNumberToObject(get_info, "serial", serial_id);

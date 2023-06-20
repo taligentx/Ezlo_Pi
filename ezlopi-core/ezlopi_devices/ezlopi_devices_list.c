@@ -11,7 +11,10 @@
 #include "sensor_0007_I2C_GY271.h"
 #include "sensor_0008_I2C_LTR303ALS.h"
 #include "device_0009_other_RMT_SK6812.h"
+
+#if (CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32)
 #include "sensor_0010_I2C_BME680.h"
+#endif
 // TODO Include for 0011
 #include "sensor_0012_I2C_BME280.h"
 #include "sensor_0014_UART_PMS5003.h"
@@ -34,14 +37,21 @@
 #include "sensor_0030_oneWire_DS18B20.h"
 #include "sensor_0031_other_JSNSR04T.h"
 #include "sensor_0032_ADC_soilMoisture.h"
+#include "sensor_0033_ADC_turbidity.h"
+#include "sensor_0034_digitalIn_proximity.h"
 #include "sensor_0035_digitalIn_touch_sensor_TPP223B.h"
+
+#if (CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32)
 #include "device_0036_PWM_servo_MG996R.h"
+#endif
+
 #include "sensor_0016_oneWire_DHT22.h"
 #include "sensor_0032_ADC_soilMoisture.h"
 #include "sensor_0031_other_JSNSR04T.h"
 #include "sensor_0017_ADC_potentiometer.h"
 #include "device_0036_PWM_servo_MG996R.h"
 #include "device_0038_digitalOut_RGB.h"
+
 // #include "sensor_0039_I2C_MAX30102.h"
 
 static s_ezlopi_device_t device_array[] = {
@@ -128,12 +138,12 @@ static s_ezlopi_device_t device_array[] = {
 //         .func =
 //     },
 // #endif
-// #ifdef EZLOPI_SENSOR_0012_I2C_BME280
-//     {
-//         .id = EZLOPI_SENSOR_0012_I2C_BME280,
-//         .func = sensor_0012_I2C_BME280,
-//     },
-// #endif
+#ifdef EZLOPI_SENSOR_0012_I2C_BME280
+    {
+        .id = EZLOPI_SENSOR_0012_I2C_BME280,
+        .func = sensor_0012_I2C_BME280,
+    },
+#endif
 // #ifdef EZLOPI_SENSOR_0013_SPI_BME280
 //     {
 //         .id = EZLOPI_SENSOR_0013_SPI_BME280,
@@ -274,18 +284,18 @@ static s_ezlopi_device_t device_array[] = {
     },
 #endif
 
-// #ifdef EZLOPI_SENSOR_0033_ADC_TURBIDITY
-//     {
-//         .id = EZLOPI_SENSOR_0033_ADC_TURBIDITY,
-//         .func = ,
-//     },
-// #endif
-// #ifdef EZLOPI_SENSOR_0034_DIGITAL_IN_PROXIMITY
-//     {
-//         .id = EZLOPI_SENSOR_0034_DIGITAL_IN_PROXIMITY,
-//         .func = ,
-//     },
-// #endif
+#ifdef EZLOPI_SENSOR_0033_ADC_TURBIDITY
+    {
+        .id = EZLOPI_SENSOR_0033_ADC_TURBIDITY,
+        .func = sensor_0033_ADC_turbidity
+    },
+#endif
+#ifdef EZLOPI_SENSOR_0034_DIGITAL_IN_PROXIMITY
+    {
+        .id = EZLOPI_SENSOR_0034_DIGITAL_IN_PROXIMITY,
+        .func = sensor_0034_digitalIn_proximity
+    },
+#endif
 
 #ifdef EZLOPI_SENSOR_0035_DIGITAL_IN_TPP223B_TOUCH_SENSOR
     {
