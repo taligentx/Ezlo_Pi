@@ -413,13 +413,13 @@ static const char *test_device_constant_config =
         [\
             {\
                 \"dev_type\": 5,\
-                \"dev_name\": \"Backlight control\",\
+                \"dev_name\": \"MG996R\",\
                 \"id_room\": \"\",\
-                \"id_item\": 9,\
-                \"gpio\": 47,\
-                \"duty_cycle\": 0,\
-                \"freq_hz\": 50,\
-                \"pwm_rsln\": 8\
+                \"id_item\": 36,\
+                \"gpio\": 5,\
+                \"pwm_rsln\": 19,\
+                \"freq_hz\": 50,\	
+	            \"duty_cycle\": 0\
             }\
         ],\
     \"dev_total\": 1}";

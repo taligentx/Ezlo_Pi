@@ -51,7 +51,11 @@
 #define EZLOPI_SENSOR_0033_ADC_TURBIDITY                                33
 #define EZLOPI_SENSOR_0034_DIGITAL_IN_PROXIMITY                         34
 #define EZLOPI_SENSOR_0035_DIGITAL_IN_TPP223B_TOUCH_SENSOR              35
+
+#if (CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32)
 #define EZLOPI_DEVICE_0036_PWM_SERVO_MG996R                             36
+#endif
+
 #define EZLOPI_SENSOR_0037_DIGITAL_OUTPUT_PMS5003_GPIO                  37
 #define EZLOPI_DEVICE_0038_DIGITAL_OUTPUT_RGB_LED                       38
 
