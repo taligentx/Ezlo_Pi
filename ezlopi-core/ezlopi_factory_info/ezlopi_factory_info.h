@@ -18,10 +18,10 @@ extern "C"
 #define EZLOPI_DEVICE_TYPE_SOUND_SENSOR 3
 #define EZLOPI_DEVICE_TYPE_AMBIENT_TRACKER_PRO 4
 
-#define EZLOPI_DEVICE_TYPE EZLOPI_DEVICE_TYPE_TEST_DEVICE
+#define EZLOPI_DEVICE_TYPE EZLOPI_GENERIC
+// #define EZLOPI_DEVICE_TYPE EZLOPI_TEST_DEVICE
 
 #include "esp_partition.h"
-#include "frozen.h"
 
 #define EZLOPI_FACTORY_INFO_V2_PARTITION_NAME "id"
 #define EZLOPI_FACTORY_INFO_V2_PARTITION_SIZE 0xF000 // 20480 // 20KB
@@ -156,6 +156,8 @@ typedef struct s_basic_factory_info
 #endif
 
     void print_factory_info_v2(void);
+    uint32_t ezlopi_factory_info_v2_get_provisioning_status(void);
+    const esp_partition_t *ezlopi_factory_info_v2_init(void);
     void ezlopi_factory_info_v2_free(void *arg);
     uint16_t ezlopi_factory_info_v2_get_version(void);
     char *ezlopi_factory_info_v2_get_name(void);

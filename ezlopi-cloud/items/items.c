@@ -5,7 +5,6 @@
 #include "sdkconfig.h"
 #include "items.h"
 #include "trace.h"
-#include "frozen.h"
 // #include "web_provisioning.h"
 
 #include "cJSON.h"

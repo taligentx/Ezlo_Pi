@@ -56,8 +56,8 @@ int sensor_0029_I2C_GXHTC3(e_ezlopi_actions_t action, s_ezlopi_device_properties
     return ret;
 }
 
-static float temperature = 0.0;
-static float relative_humidity = 0.0;
+float temperature_gxhtc3 = 0.0;
+float relative_humidity = 0.0;
 
 static void wgxhtc3_sensor_read_sensor_data(s_ezlopi_device_properties_t *properties)
 {
@@ -72,10 +72,10 @@ static void wgxhtc3_sensor_read_sensor_data(s_ezlopi_device_properties_t *proper
     ezlopi_i2c_master_read_from_device(&properties->interface.i2c_master, read_buffer, 6);
     dump("read_buffer", read_buffer, 0, 6);
 
-    temperature = 100.0 * (read_buffer[0] << 8 | read_buffer[1]) / 65536.0;
+    temperature_gxhtc3 = 100.0 * (read_buffer[0] << 8 | read_buffer[1]) / 65536.0;
     relative_humidity = -45.0 + 175 * (read_buffer[0] << 8 | read_buffer[1]) / 65536.0;
 
-    TRACE_B("Temperature: %f *C", temperature);
+    TRACE_B("Temperature: %f *C", temperature_gxhtc3);
     TRACE_B("Humidity: %f %%", relative_humidity);
 }
 
@@ -88,8 +88,8 @@ static int gxhtc3_notify(s_ezlopi_device_properties_t *properties, void *args)
     {
         if (category_temperature == properties->ezlopi_cloud.category)
         {
-            TRACE_D("Temperature is: %f *C", temperature);
-            cJSON_AddNumberToObject(cjson_properties, "value", temperature);
+            TRACE_D("Temperature is: %f *C", temperature_gxhtc3);
+            cJSON_AddNumberToObject(cjson_properties, "value", temperature_gxhtc3);
             cJSON_AddStringToObject(cjson_properties, "scale", "celsius");
         }
         if (category_humidity == properties->ezlopi_cloud.category)

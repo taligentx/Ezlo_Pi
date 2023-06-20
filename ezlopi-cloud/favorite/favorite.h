@@ -2,7 +2,6 @@
 #define __HUB_FAVORITE_LIST_H__
 
 #include <string.h>
-#include "frozen.h"
 #include "cJSON.h"
 
 #ifdef __cplusplus
