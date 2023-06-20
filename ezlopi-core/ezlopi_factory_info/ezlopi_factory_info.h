@@ -411,14 +411,15 @@ static const char *test_device_constant_config =
         \"dev_detail\":\
         [\
             {\
-                \"dev_name\": \"JSN-SR04T\",\
-                \"dev_type\": 10,\
-                \"id_item\": 31,\
+                \"dev_type\": 8,\
+                \"dev_name\": \"ADXL345\",\
                 \"id_room\": \"\",\
-                \"gpio1\": 5,\
-                \"gpio2\": 4,\
-                \"en_gpio1\": true,\
-                \"en_gpio2\": true\
+                \"id_item\": 6,\
+                \"gpio_sda\": 19,\
+                \"gpio_scl\": 20,\
+                \"pullup_scl\": true,\
+                \"pullup_sda\": true,\
+                \"slave_addr\": 105\
             }\
         ],\
     \"dev_total\": 1}";

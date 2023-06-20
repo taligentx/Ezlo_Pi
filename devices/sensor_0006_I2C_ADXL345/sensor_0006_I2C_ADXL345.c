@@ -87,11 +87,11 @@ static int sensor_i2c_accelerometer_prepare(void *arg)
     if ((NULL != prep_arg) && (NULL != prep_arg->cjson_device))
     {
         uint32_t device_id = ezlopi_cloud_generate_device_id();
-        ADD_PROPERTIES_DEVICE_LIST(device_id, category_level_sensor, subcategory_navigation, ezlopi_item_name_acceleration_x_axis, value_type_acceleration, prep_arg->cjson_device);
+        ADD_PROPERTIES_DEVICE_LIST(device_id, category_generic_sensor, subcategory_not_defined, ezlopi_item_name_acceleration_x_axis, value_type_acceleration, prep_arg->cjson_device);
         device_id = ezlopi_cloud_generate_device_id();
-        ADD_PROPERTIES_DEVICE_LIST(device_id, category_level_sensor, subcategory_navigation, ezlopi_item_name_acceleration_y_axis, value_type_acceleration, prep_arg->cjson_device);
+        ADD_PROPERTIES_DEVICE_LIST(device_id, category_generic_sensor, subcategory_not_defined, ezlopi_item_name_acceleration_y_axis, value_type_acceleration, prep_arg->cjson_device);
         device_id = ezlopi_cloud_generate_device_id();
-        ADD_PROPERTIES_DEVICE_LIST(device_id, category_level_sensor, subcategory_navigation, ezlopi_item_name_acceleration_z_axis, value_type_acceleration, prep_arg->cjson_device);
+        ADD_PROPERTIES_DEVICE_LIST(device_id, category_generic_sensor, subcategory_not_defined, ezlopi_item_name_acceleration_z_axis, value_type_acceleration, prep_arg->cjson_device);
     }
     return ret;
 }
@@ -126,7 +126,19 @@ static s_ezlopi_device_properties_t *sensor_i2c_accelerometer_prepare_properties
             sensor_i2c_accelerometer_properties->interface_type = EZLOPI_DEVICE_INTERFACE_I2C_MASTER;
 
             char *device_name = NULL;
-            CJSON_GET_VALUE_STRING(cjson_device, "dev_name", device_name);
+            if(ezlopi_item_name_acceleration_x_axis == item_name)
+            {
+                device_name = "Acceleration-X";
+            }
+            if(ezlopi_item_name_acceleration_y_axis == item_name)
+            {
+                device_name = "Acceleration-Y";
+            }
+            if(ezlopi_item_name_acceleration_z_axis == item_name)
+            {
+                device_name = "Acceleration-Z";
+            }
+            // CJSON_GET_VALUE_STRING(cjson_device, "dev_name", device_name);
             ASSIGN_DEVICE_NAME(sensor_i2c_accelerometer_properties, device_name);
             sensor_i2c_accelerometer_properties->ezlopi_cloud.category = category;
             sensor_i2c_accelerometer_properties->ezlopi_cloud.subcategory = sub_category;
@@ -185,26 +197,33 @@ static int sensor_i2c_accelerometer_get_value_cjson(s_ezlopi_device_properties_t
     int ret = 0;
     cJSON *cjson_properties = (cJSON *)args;
     float acceleration_value;
+    char valueFormatted[20];
     if (cjson_properties)
     {
         if (ezlopi_item_name_acceleration_x_axis == properties->ezlopi_cloud.item_name)
         {
             acceleration_value = (get_x_axis_value(properties) * ADXL345_CONVERTER_FACTOR_MG_TO_G * ADXL345_STANDARD_G_TO_ACCEL_CONVERSION_VALUE);
+            snprintf(valueFormatted, 20, "%.2f", acceleration_value);
             TRACE_I("X-axis : %.2f", acceleration_value);
+            cJSON_AddStringToObject(cjson_properties, "valueFormatted", valueFormatted);
             cJSON_AddNumberToObject(cjson_properties, "value", acceleration_value);
             cJSON_AddStringToObject(cjson_properties, "scale", "meter_per_square_second");
         }
         if (ezlopi_item_name_acceleration_y_axis == properties->ezlopi_cloud.item_name)
         {
             acceleration_value = (get_y_axis_value(properties) * ADXL345_CONVERTER_FACTOR_MG_TO_G * ADXL345_STANDARD_G_TO_ACCEL_CONVERSION_VALUE);
+            snprintf(valueFormatted, 20, "%.2f", acceleration_value);
             TRACE_I("Y-axis : %.2f", acceleration_value);
+            cJSON_AddStringToObject(cjson_properties, "valueFormatted", valueFormatted);
             cJSON_AddNumberToObject(cjson_properties, "value", acceleration_value);
             cJSON_AddStringToObject(cjson_properties, "scale", "meter_per_square_second");
         }
         if (ezlopi_item_name_acceleration_z_axis == properties->ezlopi_cloud.item_name)
         {
             acceleration_value = (get_z_axis_value(properties) * ADXL345_CONVERTER_FACTOR_MG_TO_G * ADXL345_STANDARD_G_TO_ACCEL_CONVERSION_VALUE);
+            snprintf(valueFormatted, 20, "%.2f", acceleration_value);
             TRACE_I("Z-axis : %.2f", acceleration_value);
+            cJSON_AddStringToObject(cjson_properties, "valueFormatted", valueFormatted);
             cJSON_AddNumberToObject(cjson_properties, "value", acceleration_value);
             cJSON_AddStringToObject(cjson_properties, "scale", "meter_per_square_second");
         }
