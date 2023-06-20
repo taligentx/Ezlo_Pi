@@ -33,9 +33,9 @@ void items_list(cJSON *cj_request, cJSON *cj_response)
                     if (cj_properties)
                     {
                         char tmp_string[64];
-                        snprintf(tmp_string, sizeof(tmp_string), "%08x", registered_device->properties->ezlopi_cloud.item_id);
+                        snprintf(tmp_string, sizeof(tmp_string), "%016llx", registered_device->properties->ezlopi_cloud.item_id);
                         cJSON_AddStringToObject(cj_properties, "_id", tmp_string);
-                        snprintf(tmp_string, sizeof(tmp_string), "%08x", registered_device->properties->ezlopi_cloud.device_id);
+                        snprintf(tmp_string, sizeof(tmp_string), "%016llx", registered_device->properties->ezlopi_cloud.device_id);
                         cJSON_AddStringToObject(cj_properties, "deviceId", tmp_string);
                         cJSON_AddStringToObject(cj_properties, "deviceName", registered_device->properties->ezlopi_cloud.device_name);
                         cJSON_AddTrueToObject(cj_properties, "deviceArmed");
@@ -74,7 +74,7 @@ void items_set_value(cJSON *cj_request, cJSON *cj_response)
         char *item_id_str = 0;
         CJSON_GET_VALUE_STRING(cj_params, ezlopi__id_str, item_id_str);
         int item_id = strtol(item_id_str, NULL, 16);
-        TRACE_I("item_id: %X", item_id);
+        // TRACE_I("item_id: %X", item_id);
 
         l_ezlopi_configured_devices_t *registered_device = ezlopi_devices_list_get_configured_items();
         while (NULL != registered_device)
@@ -115,7 +115,7 @@ void items_update(cJSON *cj_request, cJSON *cj_response)
                     {
                         char tmp_string[64];
                         cJSON_AddStringToObject(cj_result, "_id", item_id_str);
-                        snprintf(tmp_string, sizeof(tmp_string), "%08x", registered_device->properties->ezlopi_cloud.device_id);
+                        snprintf(tmp_string, sizeof(tmp_string), "%016llx", registered_device->properties->ezlopi_cloud.device_id);
                         cJSON_AddStringToObject(cj_result, "deviceId", tmp_string);
                         cJSON_AddStringToObject(cj_result, "deviceName", registered_device->properties->ezlopi_cloud.device_name);
                         cJSON_AddStringToObject(cj_result, "deviceCategory", registered_device->properties->ezlopi_cloud.category);
@@ -155,9 +155,9 @@ cJSON *ezlopi_cloud_items_updated_from_devices(l_ezlopi_configured_devices_t *re
                 if (cj_result)
                 {
                     char tmp_string[64];
-                    snprintf(tmp_string, sizeof(tmp_string), "%08x", registered_device->properties->ezlopi_cloud.item_id);
+                    snprintf(tmp_string, sizeof(tmp_string), "%016llx", registered_device->properties->ezlopi_cloud.item_id);
                     cJSON_AddStringToObject(cj_result, "_id", tmp_string);
-                    snprintf(tmp_string, sizeof(tmp_string), "%08x", registered_device->properties->ezlopi_cloud.device_id);
+                    snprintf(tmp_string, sizeof(tmp_string), "%016llx", registered_device->properties->ezlopi_cloud.device_id);
                     cJSON_AddStringToObject(cj_result, "deviceId", tmp_string);
                     cJSON_AddStringToObject(cj_result, "deviceName", registered_device->properties->ezlopi_cloud.device_name);
                     cJSON_AddStringToObject(cj_result, "deviceCategory", registered_device->properties->ezlopi_cloud.category);

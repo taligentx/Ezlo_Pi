@@ -55,7 +55,7 @@
         {                                                                                         \
             snprintf(digital_io_device_properties->ezlopi_cloud.device_name,                      \
                      sizeof(digital_io_device_properties->ezlopi_cloud.device_name),              \
-                     "dev-%d:digital_out", digital_io_device_properties->ezlopi_cloud.device_id); \
+                     "dev-%lld:digital_out", digital_io_device_properties->ezlopi_cloud.device_id); \
         }                                                                                         \
     }
 

@@ -21,9 +21,11 @@ static int device_0001_digitalOut_generic_init(s_ezlopi_device_properties_t *pro
 static int device_0001_digitalOut_generic_get_value_cjson(s_ezlopi_device_properties_t *properties, void *arg);
 static int device_0001_digitalOut_generic_set_value(s_ezlopi_device_properties_t *properties, void *arg);
 static s_ezlopi_device_properties_t *device_0001_digitalOut_generic_item(cJSON *cjson_device);
-static s_ezlopi_device_settings_properties_t *ezlopi_device_settings_broadcast_interval_prepare_properties();
-static s_ezlopi_device_settings_properties_t *ezlopi_device_settings_sound_threshold_prepare_properties(); 
-static s_ezlopi_device_settings_properties_t *ezlopi_device_settings_performance_flag_prepare_properties();
+
+// static s_ezlopi_device_settings_properties_t *ezlopi_device_settings_broadcast_interval_prepare_properties();
+// static s_ezlopi_device_settings_properties_t *ezlopi_device_settings_sound_threshold_prepare_properties(); 
+// static s_ezlopi_device_settings_properties_t *ezlopi_device_settings_performance_flag_prepare_properties();
+
 static void device_0001_digitalOut_generic_write_gpio_value(s_ezlopi_device_properties_t *properties);
 static uint32_t device_0001_digitalOut_generic_read_gpio_value(s_ezlopi_device_properties_t *properties);
 static void device_0001_digitalOut_generic_gpio_interrupt_upcall(s_ezlopi_device_properties_t *properties);
@@ -31,7 +33,7 @@ static void device_0001_digitalOut_generic_toggle_gpio(s_ezlopi_device_propertie
 
 
 int device_0001_digitalOut_generic(e_ezlopi_actions_t action, s_ezlopi_device_properties_t *properties, void *arg, void *user_arg)
-{
+    {
     int ret = 0;
 
     switch (action)
@@ -97,7 +99,7 @@ static int device_0001_digitalOut_generic_set_value(s_ezlopi_device_properties_t
 
         TRACE_I("item_name: %s", properties->ezlopi_cloud.item_name);
         TRACE_I("gpio_num: %d", properties->interface.gpio.gpio_out.gpio_num);
-        TRACE_I("item_id: %d", properties->ezlopi_cloud.item_id);
+        TRACE_I("item_id: %lld", properties->ezlopi_cloud.item_id);
         TRACE_I("prev value: %d", properties->interface.gpio.gpio_out.value);
         TRACE_I("cur value: %d", value);
 
@@ -142,9 +144,40 @@ static int device_0001_digitalOut_generic_prepare(void *arg)
     cJSON *cjson_device = prep_arg->cjson_device;
 
     s_ezlopi_device_properties_t *device_0001_digitalOut_generic_device_properties = NULL;
+
+    if ((NULL == device_0001_digitalOut_generic_device_properties) && (NULL != cjson_device))
+    {
+        device_0001_digitalOut_generic_device_properties = device_0001_digitalOut_generic_item(cjson_device);
+        if (device_0001_digitalOut_generic_device_properties)
+        {
+            if (0 == ezlopi_devices_list_add(prep_arg->device, device_0001_digitalOut_generic_device_properties, NULL))
+            {
+                free(device_0001_digitalOut_generic_device_properties);
+            }
+            else
+            {
+                ret = 1;
+            }
+        }
+    }
+
+    return ret;
+}
+
+#if 0
+static int device_0001_digitalOut_generic_prepare(void *arg)
+{
+    int ret = 0;
+    s_ezlopi_prep_arg_t *prep_arg = (s_ezlopi_prep_arg_t *)arg;
+    cJSON *cjson_device = prep_arg->cjson_device;
+
+    s_ezlopi_device_properties_t *device_0001_digitalOut_generic_device_properties = NULL;
+    
+    #if 0
     s_ezlopi_device_settings_properties_t * device_settings_0001_digitalOut_generic_device_properties = NULL;
     s_ezlopi_device_settings_properties_t * device_settings_0001_digitalOut_sound_device_properties = NULL;
     s_ezlopi_device_settings_properties_t * device_settings_0001_digitalOut_perfrm_device_properties = NULL;
+    #endif 
 
     if ((NULL == device_0001_digitalOut_generic_device_properties) && (NULL != cjson_device))
     {
@@ -160,6 +193,7 @@ static int device_0001_digitalOut_generic_prepare(void *arg)
             }
             else
             {
+                #if 0
 
                 device_settings_0001_digitalOut_generic_device_properties = ezlopi_device_settings_broadcast_interval_prepare_properties();
                 device_settings_0001_digitalOut_sound_device_properties = ezlopi_device_settings_sound_threshold_prepare_properties();
@@ -202,12 +236,16 @@ static int device_0001_digitalOut_generic_prepare(void *arg)
                         ret = 1;
                     } 
                 }
+                #endif
+                ret = 1;
             }
         }
     }
 
     return ret;
 }
+
+#endif 
 
 static int device_0001_digitalOut_generic_init(s_ezlopi_device_properties_t *properties)
 {
@@ -335,6 +373,7 @@ static s_ezlopi_device_properties_t *device_0001_digitalOut_generic_item(cJSON *
 
     return device_0001_digitalOut_generic_device_properties;
 }
+
 
 static s_ezlopi_device_settings_properties_t *ezlopi_device_settings_broadcast_interval_prepare_properties(void) 
 {

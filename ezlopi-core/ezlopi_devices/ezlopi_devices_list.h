@@ -6,7 +6,6 @@
 #include <cJSON.h>
 #include "ezlopi_actions.h"
 #include "ezlopi_devices.h"
-#include "sdkconfig.h"
 
 #define EZLOPI_SENSOR_NONE 0
 

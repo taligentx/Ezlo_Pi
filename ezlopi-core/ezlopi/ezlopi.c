@@ -37,8 +37,8 @@ void ezlopi_init(void)
     ezlopi_initialize_devices();
     vTaskDelay(10);
 
-    ezlopi_initialize_settings();
-    vTaskDelay(10);
+    // ezlopi_initialize_settings();
+    // vTaskDelay(10);
 
     ezlopi_wifi_initialize();
     vTaskDelay(10);

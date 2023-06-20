@@ -316,10 +316,10 @@ char *ezlopi_factory_info_v2_get_ssl_shared_key(void)
 
 char *ezlopi_factory_info_v2_get_ezlopi_config(void)
 {
-// #if (EZLOPI_SWITCH_BOX == EZLOPI_DEVICE_TYPE)
-//     return switch_box_constant_config;
-#if (EZLOPI_DEVICE_TYPE_IR_BLASTER == EZLOPI_DEVICE_TYPE)
-    // return ir_blaster_constant_config;
+#if (EZLOPI_DEVICE_TYPE_SWITCH_BOX == EZLOPI_DEVICE_TYPE)
+    return switch_box_constant_config;
+#elif (EZLOPI_DEVICE_TYPE_IR_BLASTER == EZLOPI_DEVICE_TYPE)
+    return ir_blaster_constant_config;
 #elif (EZLOPI_DEVICE_TYPE_TEST_DEVICE == EZLOPI_DEVICE_TYPE)
     return test_device_constant_config;
 #elif (EZLOPI_DEVICE_TYPE_GENERIC == EZLOPI_DEVICE_TYPE)
@@ -330,8 +330,6 @@ char *ezlopi_factory_info_v2_get_ezlopi_config(void)
     return g_ezlopi_config;
 #elif (EZLOPI_DEVICE_TYPE_AMBIENT_TRACKER_PRO == EZLOPI_DEVICE_TYPE)
     return ambient_tracker_constant_config;
-#elif (EZLOPI_DEVICE_TYPE_IR_BLASTER == EZLOPI_DEVICE_TYPE)
-    return ir_blaster_constant_config;
 #endif
     return NULL;
 }
