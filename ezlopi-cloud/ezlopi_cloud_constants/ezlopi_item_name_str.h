@@ -195,7 +195,7 @@ const static char *ezlopi_item_name_particulate_matter_2_dot_5 = "particulate_ma
 // const static char *ezlopi_item_name_relative_modulation_level = "relative_modulation_level";
 // const static char *ezlopi_item_name_respiratory_rate = "respiratory_rate";
 // const static char *ezlopi_item_name_smoke_density = "smoke_density";
-// const static char *ezlopi_item_name_heart_rate = "heart_rate";
+const static char *ezlopi_item_name_heart_rate = "heart_rate";
 // const static char *ezlopi_item_name_soil_salinity = "soil_salinity";
 // const static char *ezlopi_item_name_soil_reactivity = "soil_reactivity";
 // const static char *ezlopi_item_name_soil_humidity = "soil_humidity";
@@ -227,8 +227,8 @@ const static char *ezlopi_item_name_particulate_matter_1 = "particulate_matter_1
 // const static char *ezlopi_item_name_suction_pressure = "suction_pressure";
 // const static char *ezlopi_item_name_sulfur_dioxide = "sulfur_dioxide";
 // const static char *ezlopi_item_name_supply_air_temperature = "supply_air_temperature";
-const static char* ezlopi_item_name_send_ir_code = "send_ir_code";
-const static char* ezlopi_item_name_learn_ir_code = "learn_ir_code";
-const static char* ezlopi_item_name_soil_humidity = "soil_humidity";
+const static char *ezlopi_item_name_send_ir_code = "send_ir_code";
+const static char *ezlopi_item_name_learn_ir_code = "learn_ir_code";
+const static char *ezlopi_item_name_soil_humidity = "soil_humidity";
 
 #endif // __EZLOPI_ITEM_NAME_STR_H__

@@ -233,9 +233,10 @@ static void Gathering_initial_raw_max_min_values(s_ezlopi_device_properties_t *p
 
 static void Gather_GY271_Calibration_data(void *params) // calibrate task
 {
-    static int calibrationData[3][2] = {{0, 0},  // xmin,xmax
-                                        {0, 0},  // ymin,ymax
-                                        {0, 0}}; // zmin,zmax// Initialization added!
+    int calibrationData[3][2] = {{0, 0},  // xmin,xmax
+                                 {0, 0},  // ymin,ymax
+                                 {0, 0}}; // zmin,zmax// Initialization added!
+
     s_ezlopi_device_properties_t *properties = (s_ezlopi_device_properties_t *)params;
 
     gy271_data_t *sensor_0007_I2C_GY271_data = (gy271_data_t *)properties->user_arg;
