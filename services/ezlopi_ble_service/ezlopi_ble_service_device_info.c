@@ -1,4 +1,5 @@
 #include "string.h"
+#include "ctype.h"
 
 #include "cJSON.h"
 #include "lwip/ip_addr.h"
@@ -62,10 +63,11 @@ static void device_info_read_func(esp_gatt_value_t *value, esp_ble_gatts_cb_para
             uint32_t total_data_len = strlen(json_str_device_info);
             uint32_t max_data_buffer_size = ezlopi_ble_gatt_get_max_data_size();
             uint32_t copy_size = ((total_data_len - param->read.offset) < max_data_buffer_size) ? (total_data_len - param->read.offset) : max_data_buffer_size;
+            TRACE_D("ble - chunk size: %d", copy_size);
 
             if ((0 != total_data_len) && (total_data_len > param->read.offset))
             {
-                TRACE_D("Sending: %.*s", copy_size, json_str_device_info + param->read.offset);
+                TRACE_D("Sending: [len = %d]\r\n%.*s", copy_size, copy_size, json_str_device_info + param->read.offset);
                 strncpy((char *)value->value, json_str_device_info + param->read.offset, copy_size);
                 value->len = copy_size;
             }
@@ -132,7 +134,10 @@ static char *device_info_jsonify(void)
         __add_factory_info_to_root(root, "manufacturer", ezlopi_factory_info_v2_get_manufacturer());
 
         char *ssid = ezlopi_factory_info_v2_get_ssid();
-        cJSON_AddStringToObject(root, "wifi_ssid", ssid ? ssid : "");
+        if (ssid)
+        {
+            cJSON_AddStringToObject(root, "wifi_ssid", (isprint(ssid[0])) ? ssid : "");
+        }
         esp_netif_ip_info_t *wifi_ip_info = ezlopi_wifi_get_ip_infos();
         cJSON_AddStringToObject(root, "wifi-ip", ip4addr_ntoa((const ip4_addr_t *)&wifi_ip_info->ip));
         cJSON_AddStringToObject(root, "wifi-gw", ip4addr_ntoa((const ip4_addr_t *)&wifi_ip_info->gw));
