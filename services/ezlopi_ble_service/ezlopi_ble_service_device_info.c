@@ -127,6 +127,8 @@ static char *device_info_jsonify(void)
         ezlopi_generate_UUID(ezpi_uuid);
         cJSON_AddStringToObject(root, "uuid", ezpi_uuid);
 
+        unsigned long long serial_id = ezlopi_factory_info_v2_get_id();
+        cJSON_AddNumberToObject(root, "serial", serial_id);
         __add_factory_info_to_root(root, "ezlopi_device_type", ezlopi_factory_info_v2_get_device_type());
         __add_factory_info_to_root(root, "model", ezlopi_factory_info_v2_get_model());
         __add_factory_info_to_root(root, "device_name", ezlopi_factory_info_v2_get_name());
