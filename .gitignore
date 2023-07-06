@@ -369,6 +369,10 @@ firmware/bootloader/subproject/*
 **/*.msm
 **/*.msp
 
+**/.DS_Store
+firmware/ezlopi/sdkconfig
+firmware/ezlopi/sdkconfig.old
+
 <<<<<<< HEAD
 =======
 # JetBrains Rider
@@ -379,5 +383,3 @@ dashboard_qt/devs/*
 dashboard_qt/release/devs/
 dashboard_qt/ezpibins/*
 >>>>>>> qt
-
-**/.DS_Store
