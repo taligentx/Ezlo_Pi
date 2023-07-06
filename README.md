@@ -30,7 +30,16 @@ Open terminal or bash-shell and run the below commands
 git clone --recursive git@github.com:ezloteam/Ezlo_Pi.git ezlopi
 cd ezlopi/firmware/ezlopi
 ```
-#### 2. Build
+
+#### 2. Set the ESP32 model: esp32 (default) or esp32s3
+
+```bash
+
+idf.py set-target esp32
+
+```
+
+#### 3. Build
 using ```idf.py```
 ```bash
 idf.py build
@@ -51,7 +60,7 @@ Generates .bin files in firmware/[version] folder. The below command also create
 ```bash
 ./build.sh release
 ```
-#### 3. flash the firmware
+#### 4. flash the firmware
 using usb port and baudrate
 ```bash
 idf.py -p <COM Port Name> -b <baud> flash
