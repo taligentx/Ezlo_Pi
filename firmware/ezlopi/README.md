@@ -61,7 +61,15 @@ cd ezlopi/firmware/ezlopi
 
 ```
 
-#### 2. Build
+#### 2. Set the ESP32 model: esp32 (default) or esp32s3
+
+```bash
+
+idf.py set-target esp32
+
+```
+
+#### 3. Build
 
 using ```idf.py```
 
@@ -103,7 +111,7 @@ Generates .bin files in firmware/[version] folder. The below command also create
 
 ```
 
-#### 3. flash the firmware
+#### 4. flash the firmware
 
 using usb port and baudrate
 
