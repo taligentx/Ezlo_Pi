@@ -23,7 +23,7 @@
 #include "gatt_server.h"
 #include "dht.h"
 #include "mpu6050.h"
-
+#include "dscKeybus.h"
 #include "wss.h"
 
 static void blinky(void *pv);
@@ -67,19 +67,20 @@ static void main_task(void *pv)
 
 void app_main(void)
 {
-    gpio_install_isr_service(0);
+    // gpio_install_isr_service(0);  // Configured in dscKeybus.c to pin GPIO interrupt on app CPU core
     qt_serial_init();
     factory_info_init();
     nvs_storage_init();
     devices_common_init_devices();
     interface_common_init();
     switch_service_init();
+    dsc_init();
     GATT_SERVER_MAIN();
 
     wifi_initialize();
     wifi_connect_from_nvs();
 
-    xTaskCreate(main_task, "main task", 20 * 1024, NULL, 2, NULL);
+    xTaskCreatePinnedToCore(main_task, "main task", 20 * 1024, NULL, 2, NULL, PRO_CPU_NUM);
     // xTaskCreate(blinky, "blinky", 2048, NULL, 1, NULL);
 }
 

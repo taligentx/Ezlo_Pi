@@ -379,3 +379,5 @@ dashboard_qt/devs/*
 dashboard_qt/release/devs/
 dashboard_qt/ezpibins/*
 >>>>>>> qt
+
+**/.DS_Store

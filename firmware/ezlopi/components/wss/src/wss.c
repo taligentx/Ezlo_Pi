@@ -74,7 +74,7 @@ void wss_client_init(struct json_token *a_uri, wss_upcall_t wss_rx_upcall_functi
     snprintf(request, sizeof(request), request_format, wss_url, wss_url, factory_info_get_info()->id);
     TRACE_D("request_format: %s", request);
 
-    xTaskCreate(wss_receive_task, "wss_receive_task", 6 * 1024, NULL, 5, NULL);
+    xTaskCreatePinnedToCore(wss_receive_task, "wss_receive_task", 6 * 1024, NULL, 5, NULL, PRO_CPU_NUM);
 }
 
 static void wss_recv_func(void)
