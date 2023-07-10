@@ -26,7 +26,13 @@
 #include "dscKeybus.h"
 #include "wss.h"
 
+// Uncomment to enable the blinky task
+//#define BLINKY
+
+#ifdef BLINKY
 static void blinky(void *pv);
+#endif
+
 static void main_task(void *pv)
 {
     char url[128];
@@ -71,19 +77,22 @@ void app_main(void)
     qt_serial_init();
     factory_info_init();
     nvs_storage_init();
+    dsc_init();
     devices_common_init_devices();
     interface_common_init();
     switch_service_init();
-    dsc_init();
     GATT_SERVER_MAIN();
 
     wifi_initialize();
     wifi_connect_from_nvs();
 
     xTaskCreatePinnedToCore(main_task, "main task", 20 * 1024, NULL, 2, NULL, PRO_CPU_NUM);
-    // xTaskCreate(blinky, "blinky", 2048, NULL, 1, NULL);
+    #ifdef BLINKY
+    xTaskCreate(blinky, "blinky", 2048, NULL, 1, NULL);
+    #endif
 }
 
+#ifdef BLINKY
 static void blinky(void *pv)
 {
     gpio_config_t io_conf = {
@@ -119,3 +128,5 @@ static void blinky(void *pv)
         // printf(">>>>>> SN-002 real data -> Humidity: %.02f, Temperature: %.02f <<<<<<\n", humidity, temperature);
     }
 }
+#endif  // BLINKY
+

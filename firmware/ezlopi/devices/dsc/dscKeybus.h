@@ -116,6 +116,9 @@ bool dscPanelDataAvailable;
 #define DSC_EXIT_AWAY 2
 #define DSC_EXIT_NO_ENTRY_DELAY 3
 
+// Data verification - number of status commands that must match sequentially to be considered valid data and added to the panel command buffer
+#define dscCommandVerifyCount 3
+
 // Syntax compatibility wrappers
 #define bitRead(value, bit) (((value) >> (bit)) & 0x01)
 #define bitSet(value, bit) ((value) |= (1UL << (bit)))

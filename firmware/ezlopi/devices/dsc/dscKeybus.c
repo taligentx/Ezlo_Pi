@@ -5,6 +5,219 @@
 portMUX_TYPE dscSpinlock = portMUX_INITIALIZER_UNLOCKED;
 
 
+// Checks for changes to the panel status
+void dscLoop() {
+  while(1) {
+
+    // Blocks this task until valid panel data is available
+    xSemaphoreTake(dscDataAvailable, portMAX_DELAY);
+
+    // If the Keybus data buffer is exceeded, the program is too busy to process all Keybus commands.  Call
+    // dscLoop() more often, or increase dscBufferSize in the library: dscKeybus.h
+    if (dscBufferOverflow) {
+      TRACE_E("DSC Keybus buffer overflow");
+      dscBufferOverflow = false;
+    }
+
+    if (dscStatusChanged) {      // Checks if the security system status has changed
+      dscStatusChanged = false;  // Reset the status tracking flag
+
+      // Checks if the interface is connected to the Keybus
+      if (dscKeybusChanged) {
+        dscKeybusChanged = false;                 // Resets the Keybus data status flag
+        if (dscKeybusConnected) TRACE_I("Keybus connected");
+        else TRACE_I("Keybus disconnected");
+      }
+
+      // Notifies if an access code is needed by the panel for arming or command outputs
+      if (dscAccessCodePrompt) {
+        dscAccessCodePrompt = false;
+        TRACE_I("Enter access code");
+      }
+
+      // Checks status per partition
+      for (uint8_t partition = 0; partition < dscPartitions; partition++) {
+
+        // Checks ready status
+        if (dscReadyChanged[partition]) {
+          dscReadyChanged[partition] = false;  // Resets the partition ready status flag
+          if (dscReady[partition]) {
+            TRACE_I("Partition %d ready", partition + 1);
+          }
+          else {
+            TRACE_I("Partition %d not ready", partition + 1);
+          }
+        }
+
+        // Checks armed status
+        if (dscArmedChanged[partition]) {
+          dscArmedChanged[partition] = false;  // Resets the partition armed status flag
+          if (dscArmed[partition]) {
+            if (dscNoEntryDelay[partition]) {
+              if (dscArmedAway[partition]) TRACE_I("Partition %d armed away with no entry delay", partition + 1);
+              if (dscArmedStay[partition]) TRACE_I("Partition %d armed stay with no entry delay", partition + 1);
+            }
+            else {
+              if (dscArmedAway[partition]) TRACE_I("Partition %d armed away", partition + 1);
+              if (dscArmedStay[partition]) TRACE_I("Partition %d armed stay", partition + 1);
+            }
+          }
+          else {
+            TRACE_I("Partition %d disarmed", partition + 1);
+          }
+        }
+
+        // Checks alarm triggered status
+        if (dscAlarmChanged[partition]) {
+          dscAlarmChanged[partition] = false;  // Resets the partition alarm status flag
+          if (dscAlarm[partition]) {
+            TRACE_I("Partition %d in alarm", partition + 1);
+          }
+        }
+
+        // Checks exit delay status
+        if (dscExitDelayChanged[partition]) {
+          dscExitDelayChanged[partition] = false;  // Resets the exit delay status flag
+          if (dscExitDelay[partition]) {
+            TRACE_I("Partition %d exit delay in progress", partition + 1);
+          }
+          else if (!dscArmed[partition]) {  // Checks for disarm during exit delay
+            TRACE_I("Partition %d disarmed", partition + 1);
+          }
+        }
+
+        // Checks entry delay status
+        if (dscEntryDelayChanged[partition]) {
+          dscEntryDelayChanged[partition] = false;  // Resets the exit delay status flag
+          if (dscEntryDelay[partition]) {
+            TRACE_I("Partition %d entry delay in progress", partition + 1);
+          }
+        }
+
+        // Checks the access code used to arm or disarm
+        if (dscAccessCodeChanged[partition]) {
+          dscAccessCodeChanged[partition] = false;  // Resets the access code status flag
+          switch (dscAccessCode[partition]) {
+            case 33:
+            case 34: TRACE_I("Partition %d duress code %d", partition + 1, dscAccessCode[partition]); break;
+            case 40: TRACE_I("Partition %d master code %d", partition + 1, dscAccessCode[partition]); break;
+            case 41:
+            case 42: TRACE_I("Partition %d supervisor code %d", partition + 1, dscAccessCode[partition]); break;
+            default: TRACE_I("Partition %d user code %d", partition + 1, dscAccessCode[partition]);break;
+          }
+        }
+
+        // Checks fire alarm status
+        if (dscFireChanged[partition]) {
+          dscFireChanged[partition] = false;  // Resets the fire status flag
+          if (dscFire[partition]) {
+            TRACE_I("Partition %d fire alarm on", partition + 1);
+          }
+          else {
+            TRACE_I("Partition %d fire alarm restored", partition + 1);
+          }
+        }
+      }
+
+      // Checks for open zones
+      // Zone status is stored in the openZones[] and openZonesChanged[] arrays using 1 bit per zone, up to 64 zones
+      //   openZones[0] and openZonesChanged[0]: Bit 0 = Zone 1 ... Bit 7 = Zone 8
+      //   openZones[1] and openZonesChanged[1]: Bit 0 = Zone 9 ... Bit 7 = Zone 16
+      //   ...
+      //   openZones[7] and openZonesChanged[7]: Bit 0 = Zone 57 ... Bit 7 = Zone 64
+      if (dscOpenZonesStatusChanged) {
+        dscOpenZonesStatusChanged = false;                           // Resets the open zones status flag
+        for (uint8_t zoneGroup = 0; zoneGroup < dscZones; zoneGroup++) {
+          for (uint8_t zoneBit = 0; zoneBit < 8; zoneBit++) {
+            if (bitRead(dscOpenZonesChanged[zoneGroup], zoneBit)) {  // Checks an individual open zone status flag
+              bitWrite(dscOpenZonesChanged[zoneGroup], zoneBit, 0);  // Resets the individual open zone status flag
+              if (bitRead(dscOpenZones[zoneGroup], zoneBit)) {       // Zone open
+                TRACE_I("Zone open: %d", zoneBit + 1 + (zoneGroup * 8));  // Determines the zone number
+              }
+              else {                                                  // Zone closed
+                TRACE_I("Zone restored: %d", zoneBit + 1 + (zoneGroup * 8));  // Determines the zone number
+              }
+            }
+          }
+        }
+      }
+
+      // Checks for zones in alarm
+      // Zone alarm status is stored in the alarmZones[] and alarmZonesChanged[] arrays using 1 bit per zone, up to 64 zones
+      //   alarmZones[0] and alarmZonesChanged[0]: Bit 0 = Zone 1 ... Bit 7 = Zone 8
+      //   alarmZones[1] and alarmZonesChanged[1]: Bit 0 = Zone 9 ... Bit 7 = Zone 16
+      //   ...
+      //   alarmZones[7] and alarmZonesChanged[7]: Bit 0 = Zone 57 ... Bit 7 = Zone 64
+      if (dscAlarmZonesStatusChanged) {
+        dscAlarmZonesStatusChanged = false;                           // Resets the alarm zones status flag
+        for (uint8_t zoneGroup = 0; zoneGroup < dscZones; zoneGroup++) {
+          for (uint8_t zoneBit = 0; zoneBit < 8; zoneBit++) {
+            if (bitRead(dscAlarmZonesChanged[zoneGroup], zoneBit)) {  // Checks an individual alarm zone status flag
+              bitWrite(dscAlarmZonesChanged[zoneGroup], zoneBit, 0);  // Resets the individual alarm zone status flag
+              if (bitRead(dscAlarmZones[zoneGroup], zoneBit)) {       // Zone alarm
+                TRACE_I("Zone alarm: %d", zoneBit + 1 + (zoneGroup * 8));  // Determines the zone number
+              }
+              else {
+                TRACE_I("Zone alarm restored: %d", zoneBit + 1 + (zoneGroup * 8));  // Determines the zone number
+              }
+            }
+          }
+        }
+      }
+
+      // Checks for a panel timestamp
+      //
+      // The panel time can be set using dsc.setTime(year, month, day, hour, minute, "accessCode") - for example:
+      //   dsc.setTime(2015, 10, 21, 7, 28, "1234")  # Sets 2015.10.21 07:28 with access code 1234
+      //
+      if (dscTimestampChanged) {
+        dscTimestampChanged = false;
+        TRACE_I("Timestamp: %d.%02d.%02d %02d:%02d", dscYear, dscMonth, dscDay, dscHour, dscMinute);
+      }
+
+      // Checks trouble status
+      if (dscTroubleChanged) {
+        dscTroubleChanged = false;  // Resets the trouble status flag
+        if (dscTrouble) TRACE_I("Trouble status on");
+        else TRACE_I("Trouble status restored");
+      }
+
+      // Checks AC power status
+      if (dscPowerChanged) {
+        dscPowerChanged = false;  // Resets the power trouble status flag
+        if (dscPowerTrouble) TRACE_I("Panel AC power trouble");
+        else TRACE_I("Panel AC power restored");
+      }
+
+      // Checks panel battery status
+      if (dscBatteryChanged) {
+        dscBatteryChanged = false;  // Resets the battery trouble status flag
+        if (dscBatteryTrouble) TRACE_I("Panel battery trouble");
+        else TRACE_I("Panel battery restored");
+      }
+
+      // Checks keypad fire alarm triggered
+      if (dscKeypadFireAlarm) {
+        dscKeypadFireAlarm = false;  // Resets the keypad fire alarm status flag
+        TRACE_I("Keypad fire alarm");
+      }
+
+      // Checks keypad auxiliary alarm triggered
+      if (dscKeypadAuxAlarm) {
+        dscKeypadAuxAlarm = false;  // Resets the keypad auxiliary alarm status flag
+        TRACE_I("Keypad aux alarm");
+      }
+
+      // Checks keypad panic alarm triggered
+      if (dscKeypadPanicAlarm) {
+        dscKeypadPanicAlarm = false;  // Resets the keypad panic alarm status flag
+        TRACE_I("Keypad panic alarm");
+      }
+    }
+  }
+}
+
+
 // Checks panel data CRC
 bool IRAM_ATTR dscValidCRC() {
   uint8_t byteCount = (dscPanelBitCount - 1) / 8;
@@ -17,8 +230,8 @@ bool IRAM_ATTR dscValidCRC() {
 }
 
 
-// Checks for redundant panel data
-bool IRAM_ATTR dscRedundantPanelData(uint8_t dscPreviousCmd[], volatile uint8_t dscCurrentCmd[], uint8_t checkedBytes) {
+// Checks for redundant panel data from dscPanelLoop()
+bool dscRedundantPanelData(uint8_t dscPreviousCmd[], volatile uint8_t dscCurrentCmd[], uint8_t checkedBytes) {
   bool redundantData = true;
   for (uint8_t i = 0; i < checkedBytes; i++) {
     if (dscPreviousCmd[i] != dscCurrentCmd[i]) {
@@ -26,6 +239,77 @@ bool IRAM_ATTR dscRedundantPanelData(uint8_t dscPreviousCmd[], volatile uint8_t 
       break;
     }
   }
+  if (redundantData) return true;
+  else {
+    for (uint8_t i = 0; i < dscReadSize; i++) dscPreviousCmd[i] = dscCurrentCmd[i];
+    return false;
+  }
+}
+
+
+// Checks for redundant panel status data from dscDataInterrupt()
+static bool IRAM_ATTR dscRedundantPanelDataISR(uint8_t dscPreviousCmd[], volatile uint8_t dscCurrentCmd[], uint8_t checkedBytes) {
+  static uint8_t countCmd05 = 0, countCmd1B = 0;
+  static uint8_t pendingCmd05[dscReadSize], pendingCmd1B[dscReadSize];
+  bool pendingCmd05Mismatch = false, pendingCmd1BMismatch = false;
+  bool redundantData = true;
+
+  // 0x05 and 0x1B status commands do not contain a CRC - this data is instead verified by
+  // requiring dscCommandVerifyCount number of identical messages before accepting the new
+  // status data as valid
+  for (uint8_t i = 0; i < checkedBytes; i++) {
+    if (dscPreviousCmd[i] != dscCurrentCmd[i]) {
+      if (dscCurrentCmd[0] == 0x05) {
+
+        if (countCmd05 >= dscCommandVerifyCount) {
+          redundantData = false;
+          countCmd05 = 0;
+        }
+        else {
+          if (countCmd05 == 0) {
+            for (uint8_t j = 0; j < dscReadSize; j++) pendingCmd05[j] = dscCurrentCmd[j];
+            countCmd05++;
+          }
+          else {
+            for (uint8_t j = 0; j < checkedBytes; j++) {
+              if (pendingCmd05[j] != dscCurrentCmd[j]) pendingCmd05Mismatch = true;
+            }
+            if (pendingCmd05Mismatch) {
+              for (uint8_t j = 0; j < dscReadSize; j++) pendingCmd05[j] = dscCurrentCmd[j];
+              countCmd05 = 0;
+            }
+            else countCmd05++;
+          }
+        }
+
+      }
+      else if (dscCurrentCmd[0] == 0x1B) {
+        if (countCmd1B >= dscCommandVerifyCount) {
+          redundantData = false;
+          countCmd1B = 0;
+        }
+        else {
+          if (countCmd1B == 0) {
+            for (uint8_t j = 0; j < dscReadSize; j++) pendingCmd1B[j] = dscCurrentCmd[j];
+            countCmd1B++;
+          }
+          else {
+            for (uint8_t j = 0; j < checkedBytes; j++) {
+              if (pendingCmd1B[j] != dscCurrentCmd[j]) pendingCmd1BMismatch = true;
+            }
+            if (pendingCmd1BMismatch) {
+              for (uint8_t j = 0; j < dscReadSize; j++) pendingCmd1B[j] = dscCurrentCmd[j];
+              countCmd1B = 0;
+            }
+            else countCmd1B++;
+          }
+        }
+      }
+
+      break;
+    }
+  }
+
   if (redundantData) return true;
   else {
     for (uint8_t i = 0; i < dscReadSize; i++) dscPreviousCmd[i] = dscCurrentCmd[i];
@@ -198,11 +482,11 @@ static bool IRAM_ATTR dscDataInterrupt(void *args) {
         static uint8_t dscPreviousCmd05[dscReadSize];
         static uint8_t dscPreviousCmd1B[dscReadSize];
         case 0x05:  // Status: partitions 1-4
-          if (dscRedundantPanelData(dscPreviousCmd05, dscIsrPanelData, dscIsrPanelByteCount)) skipData = true;
+          if (dscRedundantPanelDataISR(dscPreviousCmd05, dscIsrPanelData, dscIsrPanelByteCount)) skipData = true;
           break;
 
         case 0x1B:  // Status: partitions 5-8
-          if (dscRedundantPanelData(dscPreviousCmd1B, dscIsrPanelData, dscIsrPanelByteCount)) skipData = true;
+          if (dscRedundantPanelDataISR(dscPreviousCmd1B, dscIsrPanelData, dscIsrPanelByteCount)) skipData = true;
           break;
       }
 
@@ -284,73 +568,24 @@ void dscPanelLoop() {
     }
 
     // Skips redundant data sent constantly while in installer programming
-    static uint8_t dscPreviousCmd0A[dscReadSize];
-    static uint8_t dscPreviousCmdE6_20[dscReadSize];
+    static uint8_t dscPreviousCmd0A[dscReadSize], dscPreviousCmd0F[dscReadSize], dscPreviousCmdE6_20[dscReadSize], dscPreviousCmdE6_21[dscReadSize];
     switch (dscPanelData[0]) {
-      case 0x0A:  // Status in programming
+      case 0x0A:  // Partition 1 status in programming
         if (dscRedundantPanelData(dscPreviousCmd0A, dscPanelData, dscReadSize)) continue;
         break;
 
+      case 0x0F:  // Partition 2 status in programming
+        if (dscRedundantPanelData(dscPreviousCmd0F, dscPanelData, dscReadSize)) continue;
+        break;
+
       case 0xE6:
-        if (dscPanelData[2] == 0x20 && dscRedundantPanelData(dscPreviousCmdE6_20, dscPanelData, dscReadSize)) continue;  // Status in programming, zone lights 33-64
+        if (dscPanelData[2] == 0x20 && dscRedundantPanelData(dscPreviousCmdE6_20, dscPanelData, dscReadSize)) continue;  // Partition 1 status in programming, zone lights 33-64
+        if (dscPanelData[2] == 0x21 && dscRedundantPanelData(dscPreviousCmdE6_21, dscPanelData, dscReadSize)) continue;  // Partition 2 status in programming, zone lights 33-64
         break;
     }
     if (dscPartitions > 4) {
       static uint8_t dscPreviousCmdE6_03[dscReadSize];
       if (dscPanelData[0] == 0xE6 && dscPanelData[2] == 0x03 && dscRedundantPanelData(dscPreviousCmdE6_03, dscPanelData, 8)) continue;  // Status in alarm/programming, partitions 5-8
-    }
-
-    // Skips redundant data from periodic commands sent at regular intervals
-    static uint8_t dscPreviousCmd11[dscReadSize];
-    static uint8_t dscPreviousCmd16[dscReadSize];
-    static uint8_t dscPreviousCmd27[dscReadSize];
-    static uint8_t dscPreviousCmd2D[dscReadSize];
-    static uint8_t dscPreviousCmd34[dscReadSize];
-    static uint8_t dscPreviousCmd3E[dscReadSize];
-    static uint8_t dscPreviousCmd5D[dscReadSize];
-    static uint8_t dscPreviousCmd63[dscReadSize];
-    static uint8_t dscPreviousCmdB1[dscReadSize];
-    static uint8_t dscPreviousCmdC3[dscReadSize];
-    switch (dscPanelData[0]) {
-      case 0x11:  // Keypad slot query
-        if (dscRedundantPanelData(dscPreviousCmd11, dscPanelData, dscReadSize)) continue;
-        break;
-
-      case 0x16:  // Zone wiring
-        if (dscRedundantPanelData(dscPreviousCmd16, dscPanelData, dscReadSize)) continue;
-        break;
-
-      case 0x27:  // Status with zone 1-8 info
-        if (dscRedundantPanelData(dscPreviousCmd27, dscPanelData, dscReadSize)) continue;
-        break;
-
-      case 0x2D:  // Status with zone 9-16 info
-        if (dscRedundantPanelData(dscPreviousCmd2D, dscPanelData, dscReadSize)) continue;
-        break;
-
-      case 0x34:  // Status with zone 17-24 info
-        if (dscRedundantPanelData(dscPreviousCmd34, dscPanelData, dscReadSize)) continue;
-        break;
-
-      case 0x3E:  // Status with zone 25-32 info
-        if (dscRedundantPanelData(dscPreviousCmd3E, dscPanelData, dscReadSize)) continue;
-        break;
-
-      case 0x5D:  // Flash panel lights: status and zones 1-32
-        if (dscRedundantPanelData(dscPreviousCmd5D, dscPanelData, dscReadSize)) continue;
-        break;
-
-      case 0x63:  // Flash panel lights: status and zones 33-64
-        if (dscRedundantPanelData(dscPreviousCmd63, dscPanelData, dscReadSize)) continue;
-        break;
-
-      case 0xB1:  // Enabled zones 1-32
-        if (dscRedundantPanelData(dscPreviousCmdB1, dscPanelData, dscReadSize)) continue;
-        break;
-
-      case 0xC3:  // Unknown command
-        if (dscRedundantPanelData(dscPreviousCmdC3, dscPanelData, dscReadSize)) continue;
-        break;
     }
 
     // Processes valid panel data
@@ -368,201 +603,6 @@ void dscPanelLoop() {
 
     dscPanelDataAvailable = true;
     xSemaphoreGive(dscDataAvailable);
-  }
-}
-
-
-void dscLoop() {
-  while(1) {
-
-    // Blocks this task until valid panel data is available
-    xSemaphoreTake(dscDataAvailable, portMAX_DELAY);
-
-    // If the Keybus data buffer is exceeded, the program is too busy to process all Keybus commands.  Call
-    // dscLoop() more often, or increase dscBufferSize in the library: dscKeybus.h
-    if (dscBufferOverflow) {
-      TRACE_E("DSC Keybus buffer overflow");
-      dscBufferOverflow = false;
-    }
-
-    if (dscStatusChanged) {      // Checks if the security system status has changed
-      dscStatusChanged = false;  // Reset the status tracking flag
-
-      // Checks if the interface is connected to the Keybus
-      if (dscKeybusChanged) {
-        dscKeybusChanged = false;                 // Resets the Keybus data status flag
-        if (dscKeybusConnected) TRACE_I("Keybus connected");
-        else TRACE_I("Keybus disconnected");
-      }
-
-      // Checks status per partition
-      for (uint8_t partition = 0; partition < dscPartitions; partition++) {
-
-        // Checks ready status
-        if (dscReadyChanged[partition]) {
-          dscReadyChanged[partition] = false;  // Resets the partition ready status flag
-          if (dscReady[partition]) {
-            TRACE_I("Partition %d ready", partition + 1);
-          }
-        }
-
-        // Checks armed status
-        if (dscArmedChanged[partition]) {
-          dscArmedChanged[partition] = false;  // Resets the partition armed status flag
-          if (dscArmed[partition]) {
-            if (dscArmedAway[partition]) TRACE_I("Partition %d armed away", partition + 1);
-            if (dscArmedStay[partition]) TRACE_I("Partition %d armed stay", partition + 1);
-          }
-          else TRACE_I("Partition %d disarmed", partition + 1);
-        }
-
-        // Checks alarm triggered status
-        if (dscAlarmChanged[partition]) {
-          dscAlarmChanged[partition] = false;  // Resets the partition alarm status flag
-          if (dscAlarm[partition]) {
-            TRACE_I("Partition %d in alarm", partition + 1);
-          }
-        }
-
-        // Checks exit delay status
-        if (dscExitDelayChanged[partition]) {
-          dscExitDelayChanged[partition] = false;  // Resets the exit delay status flag
-          if (dscExitDelay[partition]) {
-            TRACE_I("Partition %d exit delay in progress", partition + 1);
-          }
-          else if (!dscArmed[partition]) {  // Checks for disarm during exit delay
-            TRACE_I("Partition %d disarmed", partition + 1);
-          }
-        }
-
-        // Checks entry delay status
-        if (dscEntryDelayChanged[partition]) {
-          dscEntryDelayChanged[partition] = false;  // Resets the exit delay status flag
-          if (dscEntryDelay[partition]) {
-            TRACE_I("Partition %d entry delay in progress", partition + 1);
-          }
-        }
-
-        // Checks the access code used to arm or disarm
-        if (dscAccessCodeChanged[partition]) {
-          dscAccessCodeChanged[partition] = false;  // Resets the access code status flag
-          switch (dscAccessCode[partition]) {
-            case 33:
-            case 34: TRACE_I("Partition %d duress code %d", partition + 1, dscAccessCode[partition]); break;
-            case 40: TRACE_I("Partition %d master code %d", partition + 1, dscAccessCode[partition]); break;
-            case 41:
-            case 42: TRACE_I("Partition %d supervisor code %d", partition + 1, dscAccessCode[partition]); break;
-            default: TRACE_I("Partition %d user code %d", partition + 1, dscAccessCode[partition]);break;
-          }
-        }
-
-        // Checks fire alarm status
-        if (dscFireChanged[partition]) {
-          dscFireChanged[partition] = false;  // Resets the fire status flag
-          if (dscFire[partition]) {
-            TRACE_I("Partition %d fire alarm on", partition + 1);
-          }
-          else {
-            TRACE_I("Partition %d fire alarm restored", partition + 1);
-          }
-        }
-      }
-
-      // Checks for open zones
-      // Zone status is stored in the openZones[] and openZonesChanged[] arrays using 1 bit per zone, up to 64 zones
-      //   openZones[0] and openZonesChanged[0]: Bit 0 = Zone 1 ... Bit 7 = Zone 8
-      //   openZones[1] and openZonesChanged[1]: Bit 0 = Zone 9 ... Bit 7 = Zone 16
-      //   ...
-      //   openZones[7] and openZonesChanged[7]: Bit 0 = Zone 57 ... Bit 7 = Zone 64
-      if (dscOpenZonesStatusChanged) {
-        dscOpenZonesStatusChanged = false;                           // Resets the open zones status flag
-        for (uint8_t zoneGroup = 0; zoneGroup < dscZones; zoneGroup++) {
-          for (uint8_t zoneBit = 0; zoneBit < 8; zoneBit++) {
-            if (bitRead(dscOpenZonesChanged[zoneGroup], zoneBit)) {  // Checks an individual open zone status flag
-              bitWrite(dscOpenZonesChanged[zoneGroup], zoneBit, 0);  // Resets the individual open zone status flag
-              if (bitRead(dscOpenZones[zoneGroup], zoneBit)) {       // Zone open
-                TRACE_I("Zone open: %d", zoneBit + 1 + (zoneGroup * 8));  // Determines the zone number
-              }
-              else {                                                  // Zone closed
-                TRACE_I("Zone restored: %d", zoneBit + 1 + (zoneGroup * 8));  // Determines the zone number
-              }
-            }
-          }
-        }
-      }
-
-      // Checks for zones in alarm
-      // Zone alarm status is stored in the alarmZones[] and alarmZonesChanged[] arrays using 1 bit per zone, up to 64 zones
-      //   alarmZones[0] and alarmZonesChanged[0]: Bit 0 = Zone 1 ... Bit 7 = Zone 8
-      //   alarmZones[1] and alarmZonesChanged[1]: Bit 0 = Zone 9 ... Bit 7 = Zone 16
-      //   ...
-      //   alarmZones[7] and alarmZonesChanged[7]: Bit 0 = Zone 57 ... Bit 7 = Zone 64
-      if (dscAlarmZonesStatusChanged) {
-        dscAlarmZonesStatusChanged = false;                           // Resets the alarm zones status flag
-        for (uint8_t zoneGroup = 0; zoneGroup < dscZones; zoneGroup++) {
-          for (uint8_t zoneBit = 0; zoneBit < 8; zoneBit++) {
-            if (bitRead(dscAlarmZonesChanged[zoneGroup], zoneBit)) {  // Checks an individual alarm zone status flag
-              bitWrite(dscAlarmZonesChanged[zoneGroup], zoneBit, 0);  // Resets the individual alarm zone status flag
-              if (bitRead(dscAlarmZones[zoneGroup], zoneBit)) {       // Zone alarm
-                TRACE_I("Zone alarm: %d", zoneBit + 1 + (zoneGroup * 8));  // Determines the zone number
-              }
-              else {
-                TRACE_I("Zone alarm restored: %d", zoneBit + 1 + (zoneGroup * 8));  // Determines the zone number
-              }
-            }
-          }
-        }
-      }
-
-      // Checks for a panel timestamp
-      //
-      // The panel time can be set using dsc.setTime(year, month, day, hour, minute, "accessCode") - for example:
-      //   dsc.setTime(2015, 10, 21, 7, 28, "1234")  # Sets 2015.10.21 07:28 with access code 1234
-      //
-      if (dscTimestampChanged) {
-        dscTimestampChanged = false;
-        TRACE_I("Timestamp: %d.%02d.%02d %02d:%02d", dscYear, dscMonth, dscDay, dscHour, dscMinute);
-      }
-
-      // Checks trouble status
-      if (dscTroubleChanged) {
-        dscTroubleChanged = false;  // Resets the trouble status flag
-        if (dscTrouble) TRACE_I("Trouble status on");
-        else TRACE_I("Trouble status restored");
-      }
-
-      // Checks AC power status
-      if (dscPowerChanged) {
-        dscPowerChanged = false;  // Resets the power trouble status flag
-        if (dscPowerTrouble) TRACE_I("Panel AC power trouble");
-        else TRACE_I("Panel AC power restored");
-      }
-
-      // Checks panel battery status
-      if (dscBatteryChanged) {
-        dscBatteryChanged = false;  // Resets the battery trouble status flag
-        if (dscBatteryTrouble) TRACE_I("Panel battery trouble");
-        else TRACE_I("Panel battery restored");
-      }
-
-      // Checks keypad fire alarm triggered
-      if (dscKeypadFireAlarm) {
-        dscKeypadFireAlarm = false;  // Resets the keypad fire alarm status flag
-        TRACE_I("Keypad fire alarm");
-      }
-
-      // Checks keypad auxiliary alarm triggered
-      if (dscKeypadAuxAlarm) {
-        dscKeypadAuxAlarm = false;  // Resets the keypad auxiliary alarm status flag
-        TRACE_I("Keypad aux alarm");
-      }
-
-      // Checks keypad panic alarm triggered
-      if (dscKeypadPanicAlarm) {
-        dscKeypadPanicAlarm = false;  // Resets the keypad panic alarm status flag
-        TRACE_I("Keypad panic alarm");
-      }
-    }
   }
 }
 
@@ -765,7 +805,7 @@ void dsc_init() {
 
   // Task setup
   dscDataAvailable = xSemaphoreCreateBinary();
-  xTaskCreatePinnedToCore(dscSetup, "dscSetup", 8192, NULL, 0, NULL, APP_CPU_NUM);  // Ensures timer interrupt is run on the app core to minimize contention with WiFi interrupts
-  xTaskCreatePinnedToCore(dscPanelLoop, "dscPanelLoop", 8192, NULL, 0, NULL, APP_CPU_NUM);
+  xTaskCreatePinnedToCore(dscSetup, "dscSetup", 4096, NULL, 0, NULL, APP_CPU_NUM);  // Ensures timer interrupt is run on the app core to minimize contention with WiFi interrupts
+  xTaskCreatePinnedToCore(dscPanelLoop, "dscPanelLoop", 4096, NULL, 0, NULL, APP_CPU_NUM);
   xTaskCreatePinnedToCore(dscLoop, "dscLoop", 4096, NULL, 0, NULL, APP_CPU_NUM);
 }
