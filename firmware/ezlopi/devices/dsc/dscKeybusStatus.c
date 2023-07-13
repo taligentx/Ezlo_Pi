@@ -580,6 +580,41 @@ void dscProcessPanel_0x3E() {
 }
 
 
+/*
+ *  PGM outputs 1-14 status is stored in dscPgmOutputs[]
+ *
+ *  dscPgmOutputs[0], Bit 0 = PGM 1 ... Bit 7 = PGM 8
+ *  dscPgmOutputs[1], Bit 0 = PGM 9 ... Bit 5 = PGM 14
+ */
+void dscProcessPanel_0x87() {
+  if (!dscValidCRC()) return;
+
+  // Resets flag to write access code if needed when writing command output keys
+  for (uint8_t partitionIndex = 0; partitionIndex < dscPartitions; partitionIndex++) {
+    dscWriteArm[partitionIndex] = false;
+  }
+
+  dscPgmOutputs[0] = dscPanelData[3] & 0x03;
+  dscPgmOutputs[0] |= dscPanelData[2] << 2;
+  dscPgmOutputs[1] = dscPanelData[2] >> 6;
+  dscPgmOutputs[1] |= (dscPanelData[3] & 0xF0) >> 2;
+
+  for (uint8_t pgmByte = 0; pgmByte < 2; pgmByte++) {
+    uint8_t pgmChanged = dscPgmOutputs[pgmByte] ^ dscPreviousPgmOutputs[pgmByte];
+
+    if (pgmChanged != 0) {
+      dscPreviousPgmOutputs[pgmByte] = dscPgmOutputs[pgmByte];
+      dscPgmOutputsStatusChanged = true;
+      if (!dscPauseStatus) dscStatusChanged = true;
+
+      for (uint8_t pgmBit = 0; pgmBit < 8; pgmBit++) {
+        if (bitRead(pgmChanged, pgmBit)) bitWrite(dscPgmOutputsChanged[pgmByte], pgmBit, 1);
+      }
+    }
+  }
+}
+
+
 void dscProcessPanel_0xA5() {
   if (!dscValidCRC()) return;
 

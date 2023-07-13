@@ -69,6 +69,8 @@ bool dscOpenZonesStatusChanged;
 uint8_t dscOpenZones[dscZones], dscOpenZonesChanged[dscZones];    // Zone status is stored in an array using 1 bit per zone, up to 64 zones
 bool dscAlarmZonesStatusChanged;
 uint8_t dscAlarmZones[dscZones], dscAlarmZonesChanged[dscZones];  // Zone alarm status is stored in an array using 1 bit per zone, up to 64 zones
+bool dscPgmOutputsStatusChanged;
+uint8_t dscPgmOutputs[2], dscPgmOutputsChanged[2];
 
 // dscPanelData[] stores panel data in an array: command [0], stop bit by itself [1], followed by the
 // remaining data.  These can be accessed directly in the program to get data that is not already
@@ -133,6 +135,7 @@ void dscProcessPanel_0x27();
 void dscProcessPanel_0x2D();
 void dscProcessPanel_0x34();
 void dscProcessPanel_0x3E();
+void dscProcessPanel_0x87();
 void dscProcessPanel_0xA5();
 void dscProcessPanel_0xE6();
 void dscProcessPanel_0xE6_0x09();
@@ -160,12 +163,13 @@ bool dscPreviousArmed[dscPartitions], dscPreviousArmedStay[dscPartitions];
 bool dscPreviousAlarm[dscPartitions];
 bool dscPreviousFire[dscPartitions];
 uint8_t dscPreviousOpenZones[dscZones], dscPreviousAlarmZones[dscZones];
+uint8_t dscPreviousPgmOutputs[2];
 
 uint8_t dscWriteByte, dscWriteBit;
 uint8_t dscPanelKey;
 uint8_t dscPanelBitCount, dscPanelByteCount;
 volatile bool dscWriteAlarm, dscWriteAsterisk, dscWroteAsterisk;
-volatile unsigned long dscClockHighTime, dscKeybusTime;
+volatile int64_t dscClockHighTime, dscKeybusTime;
 volatile uint8_t dscPanelBufferLength;
 volatile uint8_t dscPanelBuffer[dscBufferSize][dscReadSize];
 volatile uint8_t dscPanelBufferBitCount[dscBufferSize], dscPanelBufferByteCount[dscBufferSize];

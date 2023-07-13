@@ -2,7 +2,7 @@
 
 
 // Handler for critical sections
-portMUX_TYPE dscSpinlock = portMUX_INITIALIZER_UNLOCKED;
+static portMUX_TYPE dscSpinlock = portMUX_INITIALIZER_UNLOCKED;
 
 
 // Checks for changes to the panel status
@@ -159,6 +159,26 @@ void dscLoop() {
               }
               else {
                 TRACE_I("Zone alarm restored: %d", zoneBit + 1 + (zoneGroup * 8));  // Determines the zone number
+              }
+            }
+          }
+        }
+      }
+
+      // PGM outputs 1-14 status is stored in the dscPgmOutputs[] and dscPgmOutputsChanged[] arrays using 1 bit per PGM output:
+      //   dscPgmOutputs[0] and dscPgmOutputsChanged[0]: Bit 0 = PGM 1 ... Bit 7 = PGM 8
+      //   dscPgmOutputs[1] and dscPgmOutputsChanged[1]: Bit 0 = PGM 9 ... Bit 5 = PGM 14
+      if (dscPgmOutputsStatusChanged) {
+        dscPgmOutputsStatusChanged = false;  // Resets the PGM outputs status flag
+        for (uint8_t pgmGroup = 0; pgmGroup < 2; pgmGroup++) {
+          for (uint8_t pgmBit = 0; pgmBit < 8; pgmBit++) {
+            if (bitRead(dscPgmOutputsChanged[pgmGroup], pgmBit)) {         // Checks an individual PGM output status flag
+              bitWrite(dscPgmOutputsChanged[pgmGroup], pgmBit, 0);         // Resets the individual PGM output status flag
+              if (bitRead(dscPgmOutputs[pgmGroup], pgmBit)) {             // PGM enabled
+                TRACE_I("PGM enabled: %d", pgmBit + 1 + (pgmGroup * 8));   // Determines the PGM output number
+              }
+              else {
+                TRACE_I("PGM disabled: %d", pgmBit + 1 + (pgmGroup * 8));  // Determines the PGM output number
               }
             }
           }
@@ -341,7 +361,7 @@ static void IRAM_ATTR dscClockInterrupt() {
   timer_group_set_counter_enable_in_isr(dscTimerGroup, dscTimerNumber, TIMER_START);
   portENTER_CRITICAL(&dscSpinlock);
 
-  static unsigned long dscPreviousClockHighTime;
+  static int64_t dscPreviousClockHighTime;
 
   if (dscGetLevelISR(dscClockPin) == 1) {
     dscSetLevelISR(dscWritePin, 0);  // Restores the data line after a virtual keypad write
@@ -532,10 +552,8 @@ void dscPanelLoop() {
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
     // Checks if Keybus data is detected and sets a status flag if data is not detected for 3s
-    taskENTER_CRITICAL(&dscSpinlock);
     if (esp_timer_get_time() - dscKeybusTime > 3000000) dscKeybusConnected = false;  // dscKeybusTime is set in dscDataInterrupt() when the clock resets
     else dscKeybusConnected = true;
-    taskEXIT_CRITICAL(&dscSpinlock);
 
     if (dscPreviousKeybus != dscKeybusConnected) {
       dscPreviousKeybus = dscKeybusConnected;
@@ -596,6 +614,7 @@ void dscPanelLoop() {
       case 0x2D: dscProcessPanel_0x2D(); break;
       case 0x34: dscProcessPanel_0x34(); break;
       case 0x3E: dscProcessPanel_0x3E(); break;
+      case 0x87: dscProcessPanel_0x87(); break;
       case 0xA5: dscProcessPanel_0xA5(); break;
       case 0xE6: if (dscPartitions > 2) dscProcessPanel_0xE6(); break;
       case 0xEB: if (dscPartitions > 2) dscProcessPanel_0xEB(); break;
@@ -639,7 +658,7 @@ void dscWriteKeys(const char *receivedKeys) {
 // Specifies the key value to be written by dscClockInterrupt() and selects the write partition.  This includes a 500ms
 // delay after alarm keys to resolve errors when additional keys are sent immediately after alarm keys.
 void dscSetWriteKey(int receivedKey) {
-  static unsigned long previousTime;
+  static int64_t previousTime;
   static bool setPartition;
 
   // Sets the write partition if set by virtual keypad key '/'
@@ -668,28 +687,19 @@ void dscSetWriteKey(int receivedKey) {
       case '9': dscPanelKey = 0x27; break;
       case '*': dscPanelKey = 0x28; dscWriteAsterisk = true; break;
       case '#': dscPanelKey = 0x2D; break;
-      case 'F':
-      case 'f': dscPanelKey = 0x77; dscWriteAlarm = true; break;  // Keypad fire alarm
-      case 's':
-      case 'S': dscPanelKey = 0xAF; dscWriteArm[dscWritePartition - 1] = true; break;  // Arm stay
-      case 'w':
-      case 'W': dscPanelKey = 0xB1; dscWriteArm[dscWritePartition - 1] = true; break;  // Arm away
-      case 'n':
-      case 'N': dscPanelKey = 0xB6; dscWriteArm[dscWritePartition - 1] = true; break;  // Arm with no entry delay (night arm)
-      case 'A':
-      case 'a': dscPanelKey = 0xBB; dscWriteAlarm = true; break;  // Keypad auxiliary alarm
-      case 'c':
-      case 'C': dscPanelKey = 0xBB; break;                        // Door chime
-      case 'r':
-      case 'R': dscPanelKey = 0xDA; break;                        // Reset
-      case 'P':
-      case 'p': dscPanelKey = 0xDD; dscWriteAlarm = true; break;  // Keypad panic alarm
-      case 'x':
-      case 'X': dscPanelKey = 0xE1; break;                        // Exit
-      case '[': dscPanelKey = 0xD5; break;                        // Command output 1
-      case ']': dscPanelKey = 0xDA; break;                        // Command output 2
-      case '{': dscPanelKey = 0x70; break;                        // Command output 3
-      case '}': dscPanelKey = 0xEC; break;                        // Command output 4
+      case 'f': case 'F': dscPanelKey = 0x77; dscWriteAlarm = true; break;                       // Keypad fire alarm
+      case 's': case 'S': dscPanelKey = 0xAF; dscWriteArm[dscWritePartition - 1] = true; break;  // Arm stay
+      case 'w': case 'W': dscPanelKey = 0xB1; dscWriteArm[dscWritePartition - 1] = true; break;  // Arm away
+      case 'n': case 'N': dscPanelKey = 0xB6; dscWriteArm[dscWritePartition - 1] = true; break;  // Arm with no entry delay (night arm)
+      case 'a': case 'A': dscPanelKey = 0xBB; dscWriteAlarm = true; break;                       // Keypad auxiliary alarm
+      case 'c': case 'C': dscPanelKey = 0xBB; break;                                             // Door chime
+      case 'r': case 'R': dscPanelKey = 0xDA; break;                                             // Reset
+      case 'p': case 'P': dscPanelKey = 0xDD; dscWriteAlarm = true; break;                       // Keypad panic alarm
+      case 'x': case 'X': dscPanelKey = 0xE1; break;                                             // Exit
+      case '[': dscPanelKey = 0xD5; dscWriteArm[dscWritePartition - 1] = true; break;            // Command output 1
+      case ']': dscPanelKey = 0xDA; dscWriteArm[dscWritePartition - 1] = true; break;            // Command output 2
+      case '{': dscPanelKey = 0x70; dscWriteArm[dscWritePartition - 1] = true; break;            // Command output 3
+      case '}': dscPanelKey = 0xEC; dscWriteArm[dscWritePartition - 1] = true; break;            // Command output 4
       default: {
         validKey = false;
         break;
