@@ -2,7 +2,7 @@
 
 
 // Resets the state of all status components as changed for programs to get the current status
-void dscResetStatus() {
+void dsc_reset() {
   dscStatusChanged = true;
   dscKeybusChanged = true;
   dscTroubleChanged = true;
@@ -13,6 +13,7 @@ void dscResetStatus() {
     dscArmedChanged[partition] = true;
     dscAlarmChanged[partition] = true;
     dscFireChanged[partition] = true;
+    dscDisabled[partition] = true;
   }
   dscOpenZonesStatusChanged = true;
   dscAlarmZonesStatusChanged = true;
@@ -20,43 +21,60 @@ void dscResetStatus() {
     dscOpenZonesChanged[zoneGroup] = 0xFF;
     dscAlarmZonesChanged[zoneGroup] = 0xFF;
   }
+  dscPgmOutputsChanged[0] = 0xFF;
+  dscPgmOutputsChanged[1] = 0x3F;
 }
 
 
 // Sets the panel time
-void dscSetTime(unsigned int dscYear, uint8_t dscMonth, uint8_t dscDay, uint8_t dscHour, uint8_t dscMinute, const char* dscAccessCode) {
-  if (!dscReady[0]) return;  // Skips if partition 1 is not ready
-  if (dscHour > 23 || dscMinute > 59 || dscMonth > 12 || dscDay > 31 || dscYear > 2099 || (dscYear > 99 && dscYear < 1900)) return;  // Skips if input date/time is invalid
+bool dscSetTime(unsigned int year, uint8_t month, uint8_t day, uint8_t hour, uint8_t minute, const char* dscAccessCode, uint8_t timePartition) {
+
+  if (!dscReady[0]) return false;  // Skips if partition 1 is not ready
+
+  // Loops if a previous write is in progress
+  while (dscWriteKeyPending || dscWriteKeysPending) vTaskDelay(pdMS_TO_TICKS(1));
+
+  if (hour > 23 || minute > 59 || month > 12 || day > 31 || year > 2099 || (year > 99 && year < 1900)) return false;  // Skips if input date/time is invalid
   static char timeEntry[21];
   strcpy(timeEntry, "*6");
   strcat(timeEntry, dscAccessCode);
   strcat(timeEntry, "1");
 
   char timeChar[3];
-  if (dscHour < 10) strcat(timeEntry, "0");
-  itoa(dscHour, timeChar, 10);
+  if (hour < 10) strcat(timeEntry, "0");
+  itoa(hour, timeChar, 10);
   strcat(timeEntry, timeChar);
 
-  if (dscMinute < 10) strcat(timeEntry, "0");
-  itoa(dscMinute, timeChar, 10);
+  if (minute < 10) strcat(timeEntry, "0");
+  itoa(minute, timeChar, 10);
   strcat(timeEntry, timeChar);
 
-  if (dscMonth < 10) strcat(timeEntry, "0");
-  itoa(dscMonth, timeChar, 10);
+  if (month < 10) strcat(timeEntry, "0");
+  itoa(month, timeChar, 10);
   strcat(timeEntry, timeChar);
 
-  if (dscDay < 10) strcat(timeEntry, "0");
-  itoa(dscDay, timeChar, 10);
+  if (day < 10) strcat(timeEntry, "0");
+  itoa(day, timeChar, 10);
   strcat(timeEntry, timeChar);
 
-  if (dscYear >= 2000) dscYear -= 2000;
-  else if (dscYear >= 1900) dscYear -= 1900;
-  if (dscYear < 10) strcat(timeEntry, "0");
-  itoa(dscYear, timeChar, 10);
+  if (year >= 2000) year -= 2000;
+  else if (year >= 1900) year -= 1900;
+  if (year < 10) strcat(timeEntry, "0");
+  itoa(year, timeChar, 10);
   strcat(timeEntry, timeChar);
 
   strcat(timeEntry, "#");
-  dscWriteKeys(timeEntry);
+
+  if (dscWritePartition != timePartition) {
+    uint8_t previousPartition = dscWritePartition;
+    dscWritePartition = timePartition;
+    dscWriteKeys(timeEntry, false);
+    while (dscWriteKeyPending || dscWriteKeysPending) vTaskDelay(pdMS_TO_TICKS(1));
+    dscWritePartition = previousPartition;
+  }
+  else dscWriteKeys(timeEntry, false);
+
+  return true;
 }
 
 
@@ -64,27 +82,31 @@ void dscSetTime(unsigned int dscYear, uint8_t dscMonth, uint8_t dscDay, uint8_t 
 void dscProcessPanelStatus() {
 
   // Trouble status
-  if (bitRead(dscPanelData[2],4)) dscTrouble = true;
-  else dscTrouble = false;
-  if (dscTrouble != dscPreviousTrouble && (dscPanelData[3] < 0x05 || dscPanelData[3] == 0xC7)) {  // Ignores trouble light status in intermittent states
-    dscPreviousTrouble = dscTrouble;
-    dscTroubleChanged = true;
-    if (!dscPauseStatus) dscStatusChanged = true;
+  if (dscPanelData[3] <= 0x06) {  // Ignores trouble light status in intermittent states
+    if (bitRead(dscPanelData[2],4)) dscTrouble = true;
+    else dscTrouble = false;
+    if (dscTrouble != dscPreviousTrouble) {  // Ignores trouble light status in intermittent states
+      dscPreviousTrouble = dscTrouble;
+      dscTroubleChanged = true;
+      if (!dscPauseStatus) dscStatusChanged = true;
+    }
   }
 
   uint8_t partitionStart = 0;
   uint8_t partitionCount = 0;
   if (dscPanelData[0] == 0x05) {
     partitionStart = 0;
-    if (dscPanelByteCount < 9) partitionCount = 2;
+    if (dscKeybusVersion1) partitionCount = 2;  // Handles earlier panels that support up to 2 partitions
     else partitionCount = 4;
     if (dscPartitions < partitionCount) partitionCount = dscPartitions;
   }
   else if (dscPartitions > 4 && dscPanelData[0] == 0x1B) {
     partitionStart = 4;
     partitionCount = 8;
+    if (dscPartitions < partitionCount) partitionCount = dscPartitions;
   }
 
+  // Sets status per partition
   for (uint8_t partitionIndex = partitionStart; partitionIndex < partitionCount; partitionIndex++) {
     uint8_t statusByte, messageByte;
     if (partitionIndex < 4) {
@@ -94,6 +116,18 @@ void dscProcessPanelStatus() {
     else {
       statusByte = ((partitionIndex - 4) * 2) + 2;
       messageByte = ((partitionIndex - 4) * 2) + 3;
+    }
+
+    // Partition disabled status
+    if (dscPanelData[messageByte] == 0xC7) {
+      dscDisabled[partitionIndex] = true;
+      dscProcessReadyStatus(partitionIndex, false);
+    }
+    else dscDisabled[partitionIndex] = false;
+    if (dscDisabled[partitionIndex] != dscPreviousDisabled[partitionIndex]) {
+      dscPreviousDisabled[partitionIndex] = dscDisabled[partitionIndex];
+      dscDisabledChanged[partitionIndex] = true;
+      if (!dscPauseStatus) dscStatusChanged = true;
     }
 
     // Status lights
@@ -111,14 +145,15 @@ void dscProcessPanelStatus() {
     }
 
     // Fire status
-    if (bitRead(dscPanelData[statusByte],6)) dscFire[partitionIndex] = true;
-    else dscFire[partitionIndex] = false;
-    if (dscFire[partitionIndex] != dscPreviousFire[partitionIndex] && dscPanelData[messageByte] < 0x12) {  // Ignores fire light status in intermittent states
-      dscPreviousFire[partitionIndex] = dscFire[partitionIndex];
-      dscFireChanged[partitionIndex] = true;
-      if (!dscPauseStatus) dscStatusChanged = true;
+    if (dscPanelData[messageByte] < 0x12) {  // Ignores fire light status in intermittent states
+      if (bitRead(dscPanelData[statusByte],6)) dscFire[partitionIndex] = true;
+      else dscFire[partitionIndex] = false;
+      if (dscFire[partitionIndex] != dscPreviousFire[partitionIndex]) {
+        dscPreviousFire[partitionIndex] = dscFire[partitionIndex];
+        dscFireChanged[partitionIndex] = true;
+        if (!dscPauseStatus) dscStatusChanged = true;
+      }
     }
-
 
     // Messages
     switch (dscPanelData[messageByte]) {
@@ -126,19 +161,8 @@ void dscProcessPanelStatus() {
       // Ready
       case 0x01:         // Partition ready
       case 0x02: {       // Stay/away zones open
-        dscReady[partitionIndex] = true;
-        if (dscReady[partitionIndex] != dscPreviousReady[partitionIndex]) {
-          dscPreviousReady[partitionIndex] = dscReady[partitionIndex];
-          dscReadyChanged[partitionIndex] = true;
-          if (!dscPauseStatus) dscStatusChanged = true;
-        }
-
-        dscEntryDelay[partitionIndex] = false;
-        if (dscEntryDelay[partitionIndex] != dscPreviousEntryDelay[partitionIndex]) {
-          dscPreviousEntryDelay[partitionIndex] = dscEntryDelay[partitionIndex];
-          dscEntryDelayChanged[partitionIndex] = true;
-          if (!dscPauseStatus) dscStatusChanged = true;
-        }
+        dscProcessReadyStatus(partitionIndex, true);
+        dscProcessEntryDelayStatus(partitionIndex, false);
 
         dscArmedStay[partitionIndex] = false;
         dscArmedAway[partitionIndex] = false;
@@ -148,24 +172,15 @@ void dscProcessPanelStatus() {
           dscArmedChanged[partitionIndex] = true;
           if (!dscPauseStatus) dscStatusChanged = true;
         }
+
+        dscProcessAlarmStatus(partitionIndex, false);
         break;
       }
 
       // Zones open
       case 0x03: {
-        dscReady[partitionIndex] = false;
-        if (dscReady[partitionIndex] != dscPreviousReady[partitionIndex]) {
-          dscPreviousReady[partitionIndex] = dscReady[partitionIndex];
-          dscReadyChanged[partitionIndex] = true;
-          if (!dscPauseStatus) dscStatusChanged = true;
-        }
-
-        dscEntryDelay[partitionIndex] = false;
-        if (dscEntryDelay[partitionIndex] != dscPreviousEntryDelay[partitionIndex]) {
-          dscPreviousEntryDelay[partitionIndex] = dscEntryDelay[partitionIndex];
-          dscEntryDelayChanged[partitionIndex] = true;
-          if (!dscPauseStatus) dscStatusChanged = true;
-        }
+        dscProcessReadyStatus(partitionIndex, false);
+        dscProcessEntryDelayStatus(partitionIndex, false);
         break;
       }
 
@@ -181,7 +196,7 @@ void dscProcessPanelStatus() {
           dscArmedAway[partitionIndex] = true;
         }
 
-        dscWriteArm[partitionIndex] = false;
+        dscWriteAccessCode[partitionIndex] = false;
 
         dscArmed[partitionIndex] = true;
         if (dscArmed[partitionIndex] != dscPreviousArmed[partitionIndex] || dscArmedStay[partitionIndex] != dscPreviousArmedStay[partitionIndex]) {
@@ -191,42 +206,18 @@ void dscProcessPanelStatus() {
           if (!dscPauseStatus) dscStatusChanged = true;
         }
 
-        dscReady[partitionIndex] = false;
-        if (dscReady[partitionIndex] != dscPreviousReady[partitionIndex]) {
-          dscPreviousReady[partitionIndex] = dscReady[partitionIndex];
-          dscReadyChanged[partitionIndex] = true;
-          if (!dscPauseStatus) dscStatusChanged = true;
-        }
-
-        dscExitDelay[partitionIndex] = false;
-        if (dscExitDelay[partitionIndex] != dscPreviousExitDelay[partitionIndex]) {
-          dscPreviousExitDelay[partitionIndex] = dscExitDelay[partitionIndex];
-          dscExitDelayChanged[partitionIndex] = true;
-          if (!dscPauseStatus) dscStatusChanged = true;
-        }
-
-        dscExitState[partitionIndex] = 0;
-
-        dscEntryDelay[partitionIndex] = false;
-        if (dscEntryDelay[partitionIndex] != dscPreviousEntryDelay[partitionIndex]) {
-          dscPreviousEntryDelay[partitionIndex] = dscEntryDelay[partitionIndex];
-          dscEntryDelayChanged[partitionIndex] = true;
-          if (!dscPauseStatus) dscStatusChanged = true;
-        }
+        dscProcessReadyStatus(partitionIndex, false);
+        dscProcessExitDelayStatus(partitionIndex, false);
+        dscExitState[partitionIndex] = DSC_EXIT_NONE;
+        dscProcessEntryDelayStatus(partitionIndex, false);
         break;
       }
 
       // Exit delay in progress
       case 0x08: {
-        dscWriteArm[partitionIndex] = false;
-        dscAccessCodePrompt = false;
+        dscWriteAccessCode[partitionIndex] = false;
 
-        dscExitDelay[partitionIndex] = true;
-        if (dscExitDelay[partitionIndex] != dscPreviousExitDelay[partitionIndex]) {
-          dscPreviousExitDelay[partitionIndex] = dscExitDelay[partitionIndex];
-          dscExitDelayChanged[partitionIndex] = true;
-          if (!dscPauseStatus) dscStatusChanged = true;
-        }
+        dscProcessExitDelayStatus(partitionIndex, true);
 
         if (dscExitState[partitionIndex] != DSC_EXIT_NO_ENTRY_DELAY) {
           if (bitRead(dscLights[partitionIndex],3)) dscExitState[partitionIndex] = DSC_EXIT_STAY;
@@ -239,172 +230,105 @@ void dscProcessPanelStatus() {
           }
         }
 
-        dscReady[partitionIndex] = true;
-        if (dscReady[partitionIndex] != dscPreviousReady[partitionIndex]) {
-          dscPreviousReady[partitionIndex] = dscReady[partitionIndex];
-          dscReadyChanged[partitionIndex] = true;
-          if (!dscPauseStatus) dscStatusChanged = true;
-        }
+        dscProcessReadyStatus(partitionIndex, true);
         break;
       }
 
       // Arming with no entry delay
       case 0x09: {
-        dscReady[partitionIndex] = true;
-        if (dscReady[partitionIndex] != dscPreviousReady[partitionIndex]) {
-          dscPreviousReady[partitionIndex] = dscReady[partitionIndex];
-          dscReadyChanged[partitionIndex] = true;
-          if (!dscPauseStatus) dscStatusChanged = true;
-        }
-
+        dscProcessReadyStatus(partitionIndex, true);
         dscExitState[partitionIndex] = DSC_EXIT_NO_ENTRY_DELAY;
         break;
       }
 
       // Entry delay in progress
       case 0x0C: {
-        dscReady[partitionIndex] = false;
-        if (dscReady[partitionIndex] != dscPreviousReady[partitionIndex]) {
-          dscPreviousReady[partitionIndex] = dscReady[partitionIndex];
-          dscReadyChanged[partitionIndex] = true;
-          if (!dscPauseStatus) dscStatusChanged = true;
-        }
-
-        dscEntryDelay[partitionIndex] = true;
-        if (dscEntryDelay[partitionIndex] != dscPreviousEntryDelay[partitionIndex]) {
-          dscPreviousEntryDelay[partitionIndex] = dscEntryDelay[partitionIndex];
-          dscEntryDelayChanged[partitionIndex] = true;
-          if (!dscPauseStatus) dscStatusChanged = true;
-        }
+        dscProcessReadyStatus(partitionIndex, false);
+        dscProcessEntryDelayStatus(partitionIndex, true);
         break;
       }
 
       // Partition in alarm
       case 0x11: {
-        dscReady[partitionIndex] = false;
-        if (dscReady[partitionIndex] != dscPreviousReady[partitionIndex]) {
-          dscPreviousReady[partitionIndex] = dscReady[partitionIndex];
-          dscReadyChanged[partitionIndex] = true;
-          if (!dscPauseStatus) dscStatusChanged = true;
-        }
+        dscProcessReadyStatus(partitionIndex, false);
+        dscProcessEntryDelayStatus(partitionIndex, false);
+        dscProcessAlarmStatus(partitionIndex, true);
+        break;
+      }
 
-        dscEntryDelay[partitionIndex] = false;
-        if (dscEntryDelay[partitionIndex] != dscPreviousEntryDelay[partitionIndex]) {
-          dscPreviousEntryDelay[partitionIndex] = dscEntryDelay[partitionIndex];
-          dscEntryDelayChanged[partitionIndex] = true;
-          if (!dscPauseStatus) dscStatusChanged = true;
-        }
-
-        dscAlarm[partitionIndex] = true;
-        if (dscAlarm[partitionIndex] != dscPreviousAlarm[partitionIndex]) {
-          dscPreviousAlarm[partitionIndex] = dscAlarm[partitionIndex];
-          dscAlarmChanged[partitionIndex] = true;
-          if (!dscPauseStatus) dscStatusChanged = true;
-        }
+      // Arming with bypassed zones
+      case 0x15: {
+        dscProcessReadyStatus(partitionIndex, true);
         break;
       }
 
       // Partition armed with no entry delay
+      case 0x06:
       case 0x16: {
-        dscNoEntryDelay[partitionIndex] = true;
+        dscArmed[partitionIndex] = true;
 
         // Sets an armed mode if not already set, used if interface is initialized while the panel is armed
-        if (!dscArmedStay[partitionIndex] && !dscArmedAway[partitionIndex]) dscArmedStay[partitionIndex] = true;
-
-        dscArmed[partitionIndex] = true;
-        if (dscArmed[partitionIndex] != dscPreviousArmed[partitionIndex]) {
-          dscPreviousArmed[partitionIndex] = dscArmed[partitionIndex];
-          dscPreviousArmedStay[partitionIndex] = dscArmedStay[partitionIndex];
-          dscArmedChanged[partitionIndex] = true;
-          if (!dscPauseStatus) dscStatusChanged = true;
+        if (!dscArmedStay[partitionIndex] && !dscArmedAway[partitionIndex]) {
+          if (dscPanelData[messageByte] == 0x06) {
+            dscArmedStay[partitionIndex] = true;
+            dscPreviousArmedStay[partitionIndex] = dscArmedStay[partitionIndex];
+          }
+          else dscArmedAway[partitionIndex] = true;
         }
 
-        dscReady[partitionIndex] = false;
-        if (dscReady[partitionIndex] != dscPreviousReady[partitionIndex]) {
-          dscPreviousReady[partitionIndex] = dscReady[partitionIndex];
-          dscReadyChanged[partitionIndex] = true;
-          if (!dscPauseStatus) dscStatusChanged = true;
-        }
+        dscProcessNoEntryDelayStatus(partitionIndex, true);
+        dscProcessReadyStatus(partitionIndex, false);
         break;
       }
 
       // Partition disarmed
+      case 0x3D:
       case 0x3E: {
-        dscExitDelay[partitionIndex] = false;
-        if (dscExitDelay[partitionIndex] != dscPreviousExitDelay[partitionIndex]) {
-          dscPreviousExitDelay[partitionIndex] = dscExitDelay[partitionIndex];
-          dscExitDelayChanged[partitionIndex] = true;
-          if (!dscPauseStatus) dscStatusChanged = true;
+        if (dscPanelData[messageByte] == 0x3E) {  // Sets ready only during Partition disarmed
+          dscProcessReadyStatus(partitionIndex, true);
         }
 
-        dscExitState[partitionIndex] = 0;
-
-        dscEntryDelay[partitionIndex] = false;
-        if (dscEntryDelay[partitionIndex] != dscPreviousEntryDelay[partitionIndex]) {
-          dscPreviousEntryDelay[partitionIndex] = dscEntryDelay[partitionIndex];
-          dscEntryDelayChanged[partitionIndex] = true;
-          if (!dscPauseStatus) dscStatusChanged = true;
-        }
-
-        dscAlarm[partitionIndex] = false;
-        if (dscAlarm[partitionIndex] != dscPreviousAlarm[partitionIndex]) {
-          dscPreviousAlarm[partitionIndex] = dscAlarm[partitionIndex];
-          dscAlarmChanged[partitionIndex] = true;
-          if (!dscPauseStatus) dscStatusChanged = true;
-        }
+        dscProcessExitDelayStatus(partitionIndex, false);
+        dscExitState[partitionIndex] = DSC_EXIT_NONE;
+        dscProcessEntryDelayStatus(partitionIndex, false);
+        dscProcessArmed(partitionIndex, false);
+        dscProcessAlarmStatus(partitionIndex, false);
         break;
       }
 
       // Invalid access code
       case 0x8F: {
-        if (!dscArmed[partitionIndex]) {
-          dscReady[partitionIndex] = true;
-          if (dscReady[partitionIndex] != dscPreviousReady[partitionIndex]) {
-            dscPreviousReady[partitionIndex] = dscReady[partitionIndex];
-            dscReadyChanged[partitionIndex] = true;
-            if (!dscPauseStatus) dscStatusChanged = true;
-          }
-        }
+        if (!dscArmed[partitionIndex]) dscProcessReadyStatus(partitionIndex, true);
         break;
       }
 
       // Enter * function code
-      case 0x9E: {
-        dscWroteAsterisk = false;  // Resets the flag that delays writing after '*' is pressed
-        dscWriteAsterisk = false;
-        dscPanelKeyPending = false;
-        dscReady[partitionIndex] = false;
-        if (dscReady[partitionIndex] != dscPreviousReady[partitionIndex]) {
-          dscPreviousReady[partitionIndex] = dscReady[partitionIndex];
-          dscReadyChanged[partitionIndex] = true;
-          if (!dscPauseStatus) dscStatusChanged = true;
+      case 0x9E:
+      case 0xB8: {
+        if (dscStarKeyWait[partitionIndex]) {  // Resets the flag that waits for panel status 0x9E, 0xB8 after '*' is pressed
+          dscStarKeyWait[partitionIndex] = false;
+          dscStarKeyCheck = false;
+          dscWriteKeyPending = false;
         }
+        dscProcessReadyStatus(partitionIndex, false);
         break;
       }
 
       // Enter access code
       case 0x9F: {
-        if (dscWriteArm[partitionIndex]) {  // Ensures access codes are only sent when an arm command is sent through this interface
+        if (dscWriteAccessCode[partitionIndex]) {  // Ensures access codes are only sent when an arm or command output key is sent through this interface
+          dscWriteAccessCode[partitionIndex] = false;
           dscAccessCodePrompt = true;
           if (!dscPauseStatus) dscStatusChanged = true;
         }
 
-        dscReady[partitionIndex] = false;
-        if (dscReady[partitionIndex] != dscPreviousReady[partitionIndex]) {
-          dscPreviousReady[partitionIndex] = dscReady[partitionIndex];
-          dscReadyChanged[partitionIndex] = true;
-          if (!dscPauseStatus) dscStatusChanged = true;
-        }
+        dscProcessReadyStatus(partitionIndex, false);
         break;
       }
 
       default: {
         dscReady[partitionIndex] = false;
-        if (dscReady[partitionIndex] != dscPreviousReady[partitionIndex]) {
-          dscPreviousReady[partitionIndex] = dscReady[partitionIndex];
-          dscReadyChanged[partitionIndex] = true;
-          if (!dscPauseStatus) dscStatusChanged = true;
-        }
+        dscProcessReadyStatus(partitionIndex, false);
         break;
       }
     }
@@ -412,22 +336,26 @@ void dscProcessPanelStatus() {
 }
 
 
+void dscProcessPanel_0x16() {
+  if (!dscValidCRC()) return;
+
+  // Panel version
+  dscPanelVersion = ((dscPanelData[3] >> 4) * 10) + (dscPanelData[3] & 0x0F);
+}
+
+
 // Panel status and zones 1-8 status
 void dscProcessPanel_0x27() {
   if (!dscValidCRC()) return;
 
+  // Messages
   for (uint8_t partitionIndex = 0; partitionIndex < 2; partitionIndex++) {
     uint8_t messageByte = (partitionIndex * 2) + 3;
 
-    // Messages
+    // Armed
     if (dscPanelData[messageByte] == 0x04 || dscPanelData[messageByte] == 0x05) {
 
-      dscReady[partitionIndex] = false;
-      if (dscReady[partitionIndex] != dscPreviousReady[partitionIndex]) {
-        dscPreviousReady[partitionIndex] = dscReady[partitionIndex];
-        dscReadyChanged[partitionIndex] = true;
-        if (!dscPauseStatus) dscStatusChanged = true;
-      }
+      dscProcessReadyStatus(partitionIndex, false);
 
       if (dscPanelData[messageByte] == 0x04) {
         dscArmedStay[partitionIndex] = true;
@@ -439,25 +367,13 @@ void dscProcessPanel_0x27() {
       }
 
       dscArmed[partitionIndex] = true;
-      if (dscArmed[partitionIndex] != dscPreviousArmed[partitionIndex] || dscArmedStay[partitionIndex] != dscPreviousArmedStay[partitionIndex]) {
-        dscPreviousArmed[partitionIndex] = dscArmed[partitionIndex];
-        dscPreviousArmedStay[partitionIndex] = dscArmedStay[partitionIndex];
-        dscArmedChanged[partitionIndex] = true;
-        if (!dscPauseStatus) dscStatusChanged = true;
-      }
+      dscProcessExitDelayStatus(partitionIndex, false);
 
-      dscExitDelay[partitionIndex] = false;
-      if (dscExitDelay[partitionIndex] != dscPreviousExitDelay[partitionIndex]) {
-        dscPreviousExitDelay[partitionIndex] = dscExitDelay[partitionIndex];
-        dscExitDelayChanged[partitionIndex] = true;
-        if (!dscPauseStatus) dscStatusChanged = true;
-      }
-
-      dscExitState[partitionIndex] = 0;
+      dscExitState[partitionIndex] = DSC_EXIT_NONE;
     }
 
     // Armed with no entry delay
-    else if (dscPanelData[messageByte] == 0x16) {
+    else if (dscPanelData[messageByte] == 0x06 || dscPanelData[messageByte] == 0x16) {
       dscNoEntryDelay[partitionIndex] = true;
 
       // Sets an armed mode if not already set, used if interface is initialized while the panel is armed
@@ -471,112 +387,38 @@ void dscProcessPanel_0x27() {
         if (!dscPauseStatus) dscStatusChanged = true;
       }
 
-      dscExitDelay[partitionIndex] = false;
-      if (dscExitDelay[partitionIndex] != dscPreviousExitDelay[partitionIndex]) {
-        dscPreviousExitDelay[partitionIndex] = dscExitDelay[partitionIndex];
-        dscExitDelayChanged[partitionIndex] = true;
-        if (!dscPauseStatus) dscStatusChanged = true;
-      }
-
-      dscExitState[partitionIndex] = 0;
-
-      dscReady[partitionIndex] = false;
-      if (dscReady[partitionIndex] != dscPreviousReady[partitionIndex]) {
-        dscPreviousReady[partitionIndex] = dscReady[partitionIndex];
-        dscReadyChanged[partitionIndex] = true;
-        if (!dscPauseStatus) dscStatusChanged = true;
-      }
+      dscProcessExitDelayStatus(partitionIndex, false);
+      dscExitState[partitionIndex] = DSC_EXIT_NONE;
+      dscProcessReadyStatus(partitionIndex, false);
     }
   }
 
-  // Open zones 1-8 status is stored in dscOpenZones[0] and dscOpenZonesChanged[0]: Bit 0 = Zone 1 ... Bit 7 = Zone 8
-  dscOpenZones[0] = dscPanelData[6];
-  uint8_t zonesChanged = dscOpenZones[0] ^ dscPreviousOpenZones[0];
-  if (zonesChanged != 0) {
-    dscPreviousOpenZones[0] = dscOpenZones[0];
-    dscOpenZonesStatusChanged = true;
-    if (!dscPauseStatus) dscStatusChanged = true;
-
-    for (uint8_t zoneBit = 0; zoneBit < 8; zoneBit++) {
-      if (bitRead(zonesChanged, zoneBit)) {
-        bitWrite(dscOpenZonesChanged[0], zoneBit, 1);
-        if (bitRead(dscPanelData[6], zoneBit)) bitWrite(dscOpenZones[0], zoneBit, 1);
-        else bitWrite(dscOpenZones[0], zoneBit, 0);
-      }
-    }
-  }
+  // Zones 1-8 status is stored in dscOpenZones[0] and dscOpenZonesChanged[0]: Bit 0 = Zone 1 ... Bit 7 = Zone 8
+  dscProcessZoneStatus(0, 6);
 }
 
 
-// Zones 9-16 status
+// Zones 9-16 status is stored in dscOpenZones[1] and dscOpenZonesChanged[1]: Bit 0 = Zone 9 ... Bit 7 = Zone 16
 void dscProcessPanel_0x2D() {
   if (!dscValidCRC()) return;
   if (dscZones < 2) return;
-
-  // Open zones 9-16 status is stored in dscOpenZones[1] and dscOpenZonesChanged[1]: Bit 0 = Zone 9 ... Bit 7 = Zone 16
-  dscOpenZones[1] = dscPanelData[6];
-  uint8_t zonesChanged = dscOpenZones[1] ^ dscPreviousOpenZones[1];
-  if (zonesChanged != 0) {
-    dscPreviousOpenZones[1] = dscOpenZones[1];
-    dscOpenZonesStatusChanged = true;
-    if (!dscPauseStatus) dscStatusChanged = true;
-
-    for (uint8_t zoneBit = 0; zoneBit < 8; zoneBit++) {
-      if (bitRead(zonesChanged, zoneBit)) {
-        bitWrite(dscOpenZonesChanged[1], zoneBit, 1);
-        if (bitRead(dscPanelData[6], zoneBit)) bitWrite(dscOpenZones[1], zoneBit, 1);
-        else bitWrite(dscOpenZones[1], zoneBit, 0);
-      }
-    }
-  }
+  dscProcessZoneStatus(1, 6);
 }
 
 
-// Zones 17-24 status
+// Zones 17-24 status is stored in dscOpenZones[2] and dscOpenZonesChanged[2]: Bit 0 = Zone 17 ... Bit 7 = Zone 24
 void dscProcessPanel_0x34() {
   if (!dscValidCRC()) return;
   if (dscZones < 3) return;
-
-  // Open zones 17-24 status is stored in dscOpenZones[2] and dscOpenZonesChanged[2]: Bit 0 = Zone 17 ... Bit 7 = Zone 24
-  dscOpenZones[2] = dscPanelData[6];
-  uint8_t zonesChanged = dscOpenZones[2] ^ dscPreviousOpenZones[2];
-  if (zonesChanged != 0) {
-    dscPreviousOpenZones[2] = dscOpenZones[2];
-    dscOpenZonesStatusChanged = true;
-    if (!dscPauseStatus) dscStatusChanged = true;
-
-    for (uint8_t zoneBit = 0; zoneBit < 8; zoneBit++) {
-      if (bitRead(zonesChanged, zoneBit)) {
-        bitWrite(dscOpenZonesChanged[2], zoneBit, 1);
-        if (bitRead(dscPanelData[6], zoneBit)) bitWrite(dscOpenZones[2], zoneBit, 1);
-        else bitWrite(dscOpenZones[2], zoneBit, 0);
-      }
-    }
-  }
+  dscProcessZoneStatus(2, 6);
 }
 
 
-// Zones 25-32 status
+// Zones 25-32 status is stored in dscOpenZones[3] and dscOpenZonesChanged[3]: Bit 0 = Zone 25 ... Bit 7 = Zone 32
 void dscProcessPanel_0x3E() {
   if (!dscValidCRC()) return;
   if (dscZones < 4) return;
-
-  // Open zones 25-32 status is stored in dscOpenZones[3] and dscOpenZonesChanged[3]: Bit 0 = Zone 25 ... Bit 7 = Zone 32
-  dscOpenZones[3] = dscPanelData[6];
-  uint8_t zonesChanged = dscOpenZones[3] ^ dscPreviousOpenZones[3];
-  if (zonesChanged != 0) {
-    dscPreviousOpenZones[3] = dscOpenZones[3];
-    dscOpenZonesStatusChanged = true;
-    if (!dscPauseStatus) dscStatusChanged = true;
-
-    for (uint8_t zoneBit = 0; zoneBit < 8; zoneBit++) {
-      if (bitRead(zonesChanged, zoneBit)) {
-        bitWrite(dscOpenZonesChanged[3], zoneBit, 1);
-        if (bitRead(dscPanelData[6], zoneBit)) bitWrite(dscOpenZones[3], zoneBit, 1);
-        else bitWrite(dscOpenZones[3], zoneBit, 0);
-      }
-    }
-  }
+  dscProcessZoneStatus(3, 6);
 }
 
 
@@ -591,7 +433,7 @@ void dscProcessPanel_0x87() {
 
   // Resets flag to write access code if needed when writing command output keys
   for (uint8_t partitionIndex = 0; partitionIndex < dscPartitions; partitionIndex++) {
-    dscWriteArm[partitionIndex] = false;
+    dscWriteAccessCode[partitionIndex] = false;
   }
 
   dscPgmOutputs[0] = dscPanelData[3] & 0x03;
@@ -618,17 +460,7 @@ void dscProcessPanel_0x87() {
 void dscProcessPanel_0xA5() {
   if (!dscValidCRC()) return;
 
-  uint8_t dscYear3 = dscPanelData[2] >> 4;
-  uint8_t dscYear4 = dscPanelData[2] & 0x0F;
-  dscYear = (dscYear3 * 10) + dscYear4;
-  if (dscYear3 >= 7) dscYear += 1900;
-  else dscYear += 2000;
-  dscMonth = dscPanelData[3] << 2; dscMonth >>= 4;
-  uint8_t dscDay1 = dscPanelData[3] << 6; dscDay1 >>= 3;
-  uint8_t dscDay2 = dscPanelData[4] >> 5;
-  dscDay = dscDay1 | dscDay2;
-  dscHour = dscPanelData[4] & 0x1F;
-  dscMinute = dscPanelData[5] >> 2;
+  dscProcessTime(2);
 
   // Timestamp
   if (dscPanelData[6] == 0 && dscPanelData[7] == 0) {
@@ -640,7 +472,66 @@ void dscProcessPanel_0xA5() {
   uint8_t partition = dscPanelData[3] >> 6;
   switch (dscPanelData[5] & 0x03) {
     case 0x00: dscProcessPanelStatus0(partition, 6); break;
+    case 0x01: dscProcessPanelStatus1(partition, 6); break;
     case 0x02: dscProcessPanelStatus2(partition, 6); break;
+  }
+}
+
+
+/*
+ *  0xE6: Extended status, partitions 1-8
+ *  Panels: PC5020, PC1616, PC1832, PC1864
+ *
+ *  0xE6 commands are split into multiple subcommands to handle up to 8 partitions/64 zones.
+ */
+void dscProcessPanel_0xE6() {
+  if (!dscValidCRC()) return;
+
+  switch (dscPanelData[2]) {
+    case 0x09: dscProcessPanel_0xE6_0x09(); return;  // Zones 33-40 status
+    case 0x0B: dscProcessPanel_0xE6_0x0B(); return;  // Zones 41-48 status
+    case 0x0D: dscProcessPanel_0xE6_0x0D(); return;  // Zones 49-56 status
+    case 0x0F: dscProcessPanel_0xE6_0x0F(); return;  // Zones 57-64 status
+    case 0x1A: dscProcessPanel_0xE6_0x1A(); return;  // Panel status
+  }
+}
+
+
+// Zones 33-40 status is stored in dscOpenZones[4] and dscOpenZonesChanged[4]: Bit 0 = Zone 33 ... Bit 7 = Zone 40
+void dscProcessPanel_0xE6_0x09() {
+  if (dscZones > 4) dscProcessZoneStatus(4, 3);
+}
+
+
+// Zones 41-48 status is stored in dscOpenZones[5] and dscOpenZonesChanged[5]: Bit 0 = Zone 41 ... Bit 7 = Zone 48
+void dscProcessPanel_0xE6_0x0B() {
+  if (dscZones > 5) dscProcessZoneStatus(5, 3);
+}
+
+
+// Zones 49-56 status is stored in dscOpenZones[6] and dscOpenZonesChanged[6]: Bit 0 = Zone 49 ... Bit 7 = Zone 56
+void dscProcessPanel_0xE6_0x0D() {
+  if (dscZones > 6) dscProcessZoneStatus(6, 3);
+}
+
+
+// Zones 57-64 status is stored in dscOpenZones[7] and dscOpenZonesChanged[7]: Bit 0 = Zone 57 ... Bit 7 = Zone 64
+void dscProcessPanel_0xE6_0x0F() {
+  if (dscZones > 7) dscProcessZoneStatus(7, 3);
+}
+
+
+// Panel status
+void dscProcessPanel_0xE6_0x1A() {
+
+  // Panel AC power trouble
+  if (dscPanelData[6] & 0x10) dscPowerTrouble = true;
+  else dscPowerTrouble = false;
+
+  if (dscPowerTrouble != dscPreviousPower) {
+    dscPreviousPower = dscPowerTrouble;
+    dscPowerChanged = true;
+    if (!dscPauseStatus) dscStatusChanged = true;
   }
 }
 
@@ -649,17 +540,7 @@ void dscProcessPanel_0xEB() {
   if (!dscValidCRC()) return;
   if (dscPartitions < 3) return;
 
-  uint8_t dscYear3 = dscPanelData[3] >> 4;
-  uint8_t dscYear4 = dscPanelData[3] & 0x0F;
-  dscYear = (dscYear3 * 10) + dscYear4;
-  if (dscYear3 >= 7) dscYear += 1900;
-  else dscYear += 2000;
-  dscMonth = dscPanelData[4] << 2; dscMonth >>=4;
-  uint8_t dscDay1 = dscPanelData[4] << 6; dscDay1 >>= 3;
-  uint8_t dscDay2 = dscPanelData[5] >> 5;
-  dscDay = dscDay1 | dscDay2;
-  dscHour = dscPanelData[5] & 0x1F;
-  dscMinute = dscPanelData[6] >> 2;
+  dscProcessTime(3);
 
   uint8_t partition;
   switch (dscPanelData[2]) {
@@ -676,17 +557,19 @@ void dscProcessPanel_0xEB() {
 
   switch (dscPanelData[7] & 0x07) {
     case 0x00: dscProcessPanelStatus0(partition, 8); break;
+    case 0x01: dscProcessPanelStatus1(partition, 8); break;
     case 0x02: dscProcessPanelStatus2(partition, 8); break;
     case 0x04: dscProcessPanelStatus4(partition, 8); break;
+    case 0x05: dscProcessPanelStatus5(partition, 8); break;
   }
 }
 
 
-void dscProcessPanelStatus0(uint8_t partition, uint8_t dscPanelByte) {
+void dscProcessPanelStatus0(uint8_t partition, uint8_t panelByte) {
 
   // Processes status messages that are not partition-specific
-  if (partition == 0 && dscPanelData[0] == 0xA5) {
-    switch (dscPanelData[dscPanelByte]) {
+  if (dscPanelData[0] == 0xA5) {
+    switch (dscPanelData[panelByte]) {
 
       // Keypad Fire alarm
       case 0x4E: {
@@ -720,8 +603,11 @@ void dscProcessPanelStatus0(uint8_t partition, uint8_t dscPanelByte) {
       // Panel AC power failure
       case 0xE8: {
         dscPowerTrouble = true;
-        dscPowerChanged = true;
-        if (!dscPauseStatus) dscStatusChanged = true;
+        if (dscPowerTrouble != dscPreviousPower) {
+          dscPreviousPower = dscPowerTrouble;
+          dscPowerChanged = true;
+          if (!dscPauseStatus) dscStatusChanged = true;
+        }
         return;
       }
 
@@ -736,11 +622,14 @@ void dscProcessPanelStatus0(uint8_t partition, uint8_t dscPanelByte) {
       // Panel AC power restored
       case 0xF0: {
         dscPowerTrouble = false;
-        dscPowerChanged = true;
-        if (!dscPauseStatus) dscStatusChanged = true;
+        if (dscPowerTrouble != dscPreviousPower) {
+          dscPreviousPower = dscPowerTrouble;
+          dscPowerChanged = true;
+          if (!dscPauseStatus) dscStatusChanged = true;
+        }
         return;
       }
-      default: return;
+      default: if (partition == 0) return;
     }
   }
 
@@ -749,45 +638,27 @@ void dscProcessPanelStatus0(uint8_t partition, uint8_t dscPanelByte) {
   uint8_t partitionIndex = partition - 1;
 
   // Disarmed
-  if (dscPanelData[dscPanelByte] == 0x4A ||                                    // Disarmed after alarm in memory
-      dscPanelData[dscPanelByte] == 0xE6 ||                                    // Disarmed special: keyswitch/wireless key/DLS
-      (dscPanelData[dscPanelByte] >= 0xC0 && dscPanelData[dscPanelByte] <= 0xE4)) {  // Disarmed by access code
+  if (dscPanelData[panelByte] == 0x4A ||                                       // Disarmed after alarm in memory
+      dscPanelData[panelByte] == 0xE6 ||                                       // Disarmed special: keyswitch/wireless key/DLS
+      (dscPanelData[panelByte] >= 0xC0 && dscPanelData[panelByte] <= 0xE4)) {  // Disarmed by access code
 
     dscNoEntryDelay[partitionIndex] = false;
+    dscProcessArmed(partitionIndex, false);
+    dscProcessAlarmStatus(partitionIndex, false);
+    dscProcessEntryDelayStatus(partitionIndex, false);
 
-    dscArmedAway[partitionIndex] = false;
-    dscArmedStay[partitionIndex] = false;
-    dscArmed[partitionIndex] = false;
-    if (dscArmed[partitionIndex] != dscPreviousArmed[partitionIndex]) {
-      dscPreviousArmed[partitionIndex] = dscArmed[partitionIndex];
-      dscArmedChanged[partitionIndex] = true;
-      if (!dscPauseStatus) dscStatusChanged = true;
+    // Disarmed by access codes 1-34, 40-42
+    if (dscPanelData[panelByte] >= 0xC0 && dscPanelData[panelByte] <= 0xE4) {
+      uint8_t dscCode = dscPanelData[panelByte] - 0xBF;
+      dscProcessPanelAccessCode(partitionIndex, dscCode, true);
     }
 
-    dscAlarm[partitionIndex] = false;
-    if (dscAlarm[partitionIndex] != dscPreviousAlarm[partitionIndex]) {
-      dscPreviousAlarm[partitionIndex] = dscAlarm[partitionIndex];
-      dscAlarmChanged[partitionIndex] = true;
-      if (!dscPauseStatus) dscStatusChanged = true;
-    }
-
-    dscEntryDelay[partitionIndex] = false;
-    if (dscEntryDelay[partitionIndex] != dscPreviousEntryDelay[partitionIndex]) {
-      dscPreviousEntryDelay[partitionIndex] = dscEntryDelay[partitionIndex];
-      dscEntryDelayChanged[partitionIndex] = true;
-      if (!dscPauseStatus) dscStatusChanged = true;
-    }
     return;
   }
 
-  // Partition in alarm
-  if (dscPanelData[dscPanelByte] == 0x4B) {
-    dscAlarm[partitionIndex] = true;
-    if (dscAlarm[partitionIndex] != dscPreviousAlarm[partitionIndex]) {
-      dscPreviousAlarm[partitionIndex] = dscAlarm[partitionIndex];
-      dscAlarmChanged[partitionIndex] = true;
-      if (!dscPauseStatus) dscStatusChanged = true;
-    }
+  // Recent closing alarm
+  if (dscPanelData[panelByte] == 0x4B) {
+    dscProcessAlarmStatus(partitionIndex, true);
     return;
   }
 
@@ -797,63 +668,10 @@ void dscProcessPanelStatus0(uint8_t partition, uint8_t dscPanelByte) {
   //   dscAlarmZones[1] and dscAlarmZonesChanged[1]: Bit 0 = Zone 9 ... Bit 7 = Zone 16
   //   ...
   //   dscAlarmZones[7] and dscAlarmZonesChanged[7]: Bit 0 = Zone 57 ... Bit 7 = Zone 64
-  if (dscPanelData[dscPanelByte] >= 0x09 && dscPanelData[dscPanelByte] <= 0x28) {
-    dscAlarm[partitionIndex] = true;
-    if (dscAlarm[partitionIndex] != dscPreviousAlarm[partitionIndex]) {
-      dscPreviousAlarm[partitionIndex] = dscAlarm[partitionIndex];
-      dscAlarmChanged[partitionIndex] = true;
-      if (!dscPauseStatus) dscStatusChanged = true;
-    }
-
-    dscEntryDelay[partitionIndex] = false;
-    if (dscEntryDelay[partitionIndex] != dscPreviousEntryDelay[partitionIndex]) {
-      dscPreviousEntryDelay[partitionIndex] = dscEntryDelay[partitionIndex];
-      dscEntryDelayChanged[partitionIndex] = true;
-      if (!dscPauseStatus) dscStatusChanged = true;
-    }
-
-    uint8_t maxZones = dscZones * 8;
-    if (maxZones > 32) maxZones = 32;
-    for (uint8_t zoneCount = 0; zoneCount < maxZones; zoneCount++) {
-      if (dscPanelData[dscPanelByte] == 0x09 + zoneCount) {
-        if (zoneCount < 8) {
-          bitWrite(dscAlarmZones[0], zoneCount, 1);
-          if (bitRead(dscPreviousAlarmZones[0], zoneCount) != 1) {
-            bitWrite(dscPreviousAlarmZones[0], zoneCount, 1);
-            bitWrite(dscAlarmZonesChanged[0], zoneCount, 1);
-            dscAlarmZonesStatusChanged = true;
-            if (!dscPauseStatus) dscStatusChanged = true;
-          }
-        }
-        else if (zoneCount >= 8 && zoneCount < 16) {
-          bitWrite(dscAlarmZones[1], (zoneCount - 8), 1);
-          if (bitRead(dscPreviousAlarmZones[1], (zoneCount - 8)) != 1) {
-            bitWrite(dscPreviousAlarmZones[1], (zoneCount - 8), 1);
-            bitWrite(dscAlarmZonesChanged[1], (zoneCount - 8), 1);
-            dscAlarmZonesStatusChanged = true;
-            if (!dscPauseStatus) dscStatusChanged = true;
-          }
-        }
-        else if (zoneCount >= 16 && zoneCount < 24) {
-          bitWrite(dscAlarmZones[2], (zoneCount - 16), 1);
-          if (bitRead(dscPreviousAlarmZones[2], (zoneCount - 16)) != 1) {
-            bitWrite(dscPreviousAlarmZones[2], (zoneCount - 16), 1);
-            bitWrite(dscAlarmZonesChanged[2], (zoneCount - 16), 1);
-            dscAlarmZonesStatusChanged = true;
-            if (!dscPauseStatus) dscStatusChanged = true;
-          }
-        }
-        else if (zoneCount >= 24 && zoneCount < 32) {
-          bitWrite(dscAlarmZones[3], (zoneCount - 24), 1);
-          if (bitRead(dscPreviousAlarmZones[3], (zoneCount - 24)) != 1) {
-            bitWrite(dscPreviousAlarmZones[3], (zoneCount - 24), 1);
-            bitWrite(dscAlarmZonesChanged[3], (zoneCount - 24), 1);
-            dscAlarmZonesStatusChanged = true;
-            if (!dscPauseStatus) dscStatusChanged = true;
-          }
-        }
-      }
-    }
+  if (dscPanelData[panelByte] >= 0x09 && dscPanelData[panelByte] <= 0x28) {
+    dscProcessAlarmStatus(partitionIndex, true);
+    dscProcessEntryDelayStatus(partitionIndex, false);
+    dscProcessAlarmZones(panelByte, 0, 0x09, 1);
     return;
   }
 
@@ -863,90 +681,46 @@ void dscProcessPanelStatus0(uint8_t partition, uint8_t dscPanelByte) {
   //   dscAlarmZones[1] and dscAlarmZonesChanged[1]: Bit 0 = Zone 9 ... Bit 7 = Zone 16
   //   ...
   //   dscAlarmZones[7] and dscAlarmZonesChanged[7]: Bit 0 = Zone 57 ... Bit 7 = Zone 64
-  if (dscPanelData[dscPanelByte] >= 0x29 && dscPanelData[dscPanelByte] <= 0x48) {
-
-    uint8_t maxZones = dscZones * 8;
-    if (maxZones > 32) maxZones = 32;
-    for (uint8_t zoneCount = 0; zoneCount < maxZones; zoneCount++) {
-      if (dscPanelData[dscPanelByte] == 0x29 + zoneCount) {
-        if (zoneCount < 8) {
-          bitWrite(dscAlarmZones[0], zoneCount, 0);
-          if (bitRead(dscPreviousAlarmZones[0], zoneCount) != 0) {
-            bitWrite(dscPreviousAlarmZones[0], zoneCount, 0);
-            bitWrite(dscAlarmZonesChanged[0], zoneCount, 1);
-            dscAlarmZonesStatusChanged = true;
-            if (!dscPauseStatus) dscStatusChanged = true;
-          }
-        }
-        else if (zoneCount >= 8 && zoneCount < 16) {
-          bitWrite(dscAlarmZones[1], (zoneCount - 8), 0);
-          if (bitRead(dscPreviousAlarmZones[1], (zoneCount - 8)) != 0) {
-            bitWrite(dscPreviousAlarmZones[1], (zoneCount - 8), 0);
-            bitWrite(dscAlarmZonesChanged[1], (zoneCount - 8), 1);
-            dscAlarmZonesStatusChanged = true;
-            if (!dscPauseStatus) dscStatusChanged = true;
-          }
-        }
-        else if (zoneCount >= 16 && zoneCount < 24) {
-          bitWrite(dscAlarmZones[2], (zoneCount - 16), 0);
-          if (bitRead(dscPreviousAlarmZones[2], (zoneCount - 16)) != 0) {
-            bitWrite(dscPreviousAlarmZones[2], (zoneCount - 16), 0);
-            bitWrite(dscAlarmZonesChanged[2], (zoneCount - 16), 1);
-            dscAlarmZonesStatusChanged = true;
-            if (!dscPauseStatus) dscStatusChanged = true;
-          }
-        }
-        else if (zoneCount >= 24 && zoneCount < 32) {
-          bitWrite(dscAlarmZones[3], (zoneCount - 24), 0);
-          if (bitRead(dscPreviousAlarmZones[3], (zoneCount - 24)) != 0) {
-            bitWrite(dscPreviousAlarmZones[3], (zoneCount - 24), 0);
-            bitWrite(dscAlarmZonesChanged[3], (zoneCount - 24), 1);
-            dscAlarmZonesStatusChanged = true;
-            if (!dscPauseStatus) dscStatusChanged = true;
-          }
-        }
-      }
-    }
+  if (dscPanelData[panelByte] >= 0x29 && dscPanelData[panelByte] <= 0x48) {
+    dscProcessAlarmZones(panelByte, 0, 0x29, 0);
     return;
   }
 
-  //Armed by access code
-  if (dscPanelData[dscPanelByte] >= 0x99 && dscPanelData[dscPanelByte] <= 0xBD) {
-    dscAccessCode[partitionIndex] = dscPanelData[dscPanelByte] - 0x98;
-    if (dscAccessCode[partitionIndex] >= 35) dscAccessCode[partitionIndex] += 5;
-    if (dscAccessCode[partitionIndex] != dscPreviousAccessCode[partitionIndex]) {
-      dscPreviousAccessCode[partitionIndex] = dscAccessCode[partitionIndex];
-      dscAccessCodeChanged[partitionIndex] = true;
-      if (!dscPauseStatus) dscStatusChanged = true;
-    }
-    return;
-  }
-
-  // Disarmed by access code
-  if (dscPanelData[dscPanelByte] >= 0xC0 && dscPanelData[dscPanelByte] <= 0xE4) {
-    dscAccessCode[partitionIndex] = dscPanelData[dscPanelByte] - 0xBF;
-    if (dscAccessCode[partitionIndex] >= 35) dscAccessCode[partitionIndex] += 5;
-    if (dscAccessCode[partitionIndex] != dscPreviousAccessCode[partitionIndex]) {
-      dscPreviousAccessCode[partitionIndex] = dscAccessCode[partitionIndex];
-      dscAccessCodeChanged[partitionIndex] = true;
-      if (!dscPauseStatus) dscStatusChanged = true;
-    }
+  // Armed by access codes 1-34, 40-42
+  if (dscPanelData[panelByte] >= 0x99 && dscPanelData[panelByte] <= 0xBD) {
+    uint8_t dscCode = dscPanelData[panelByte] - 0x98;
+    dscProcessPanelAccessCode(partitionIndex, dscCode, true);
     return;
   }
 }
 
 
-void dscProcessPanelStatus2(uint8_t partition, uint8_t dscPanelByte) {
+void dscProcessPanelStatus1(uint8_t partition, uint8_t panelByte) {
+  if (partition == 0 || partition > dscPartitions) return;
+  uint8_t partitionIndex = partition - 1;
+
+  switch (dscPanelData[panelByte]) {
+
+    // Armed with no entry delay
+    case 0xD2: {
+      dscProcessNoEntryDelayStatus(partitionIndex, false);
+      return;
+    }
+  }
+}
+
+
+void dscProcessPanelStatus2(uint8_t partition, uint8_t panelByte) {
   if (partition == 0 || partition > dscPartitions) return;
   uint8_t partitionIndex = partition - 1;
 
   // Armed: stay and Armed: away
-  if (dscPanelData[dscPanelByte] == 0x9A || dscPanelData[dscPanelByte] == 0x9B) {
-    if (dscPanelData[dscPanelByte] == 0x9A) {
+  if (dscPanelData[panelByte] == 0x9A || dscPanelData[panelByte] == 0x9B) {
+    if (dscPanelData[panelByte] == 0x9A) {
       dscArmedStay[partitionIndex] = true;
       dscArmedAway[partitionIndex] = false;
     }
-    else if (dscPanelData[dscPanelByte] == 0x9B) {
+    else if (dscPanelData[panelByte] == 0x9B) {
       dscArmedStay[partitionIndex] = false;
       dscArmedAway[partitionIndex] = true;
     }
@@ -959,27 +733,17 @@ void dscProcessPanelStatus2(uint8_t partition, uint8_t dscPanelByte) {
       if (!dscPauseStatus) dscStatusChanged = true;
     }
 
-    dscExitDelay[partitionIndex] = false;
-    if (dscExitDelay[partitionIndex] != dscPreviousExitDelay[partitionIndex]) {
-      dscPreviousExitDelay[partitionIndex] = dscExitDelay[partitionIndex];
-      dscExitDelayChanged[partitionIndex] = true;
-      if (!dscPauseStatus) dscStatusChanged = true;
-    }
-
-    dscExitState[partitionIndex] = 0;
-
-    dscReady[partitionIndex] = false;
-    if (dscReady[partitionIndex] != dscPreviousReady[partitionIndex]) {
-      dscPreviousReady[partitionIndex] = dscReady[partitionIndex];
-      dscReadyChanged[partitionIndex] = true;
-      if (!dscPauseStatus) dscStatusChanged = true;
-    }
+    dscProcessExitDelayStatus(partitionIndex, false);
+    dscExitState[partitionIndex] = DSC_EXIT_NONE;
+    dscProcessReadyStatus(partitionIndex, false);
     return;
   }
 
-  if (dscPanelData[dscPanelByte] == 0xA5) {
-    switch (dscPanelData[dscPanelByte]) {
-      case 0x99: {        // Activate stay/away zones
+  if (dscPanelData[0] == 0xA5) {
+    switch (dscPanelData[panelByte]) {
+
+      // Activate stay/away zones
+      case 0x99: {
         dscArmed[partitionIndex] = true;
         dscArmedAway[partitionIndex] = true;
         dscArmedStay[partitionIndex] = false;
@@ -987,15 +751,11 @@ void dscProcessPanelStatus2(uint8_t partition, uint8_t dscPanelByte) {
         if (!dscPauseStatus) dscStatusChanged = true;
         return;
       }
-      case 0x9C: {        // Armed with no entry delay
-        dscNoEntryDelay[partitionIndex] = true;
 
-        dscReady[partitionIndex] = false;
-        if (dscReady[partitionIndex] != dscPreviousReady[partitionIndex]) {
-          dscPreviousReady[partitionIndex] = dscReady[partitionIndex];
-          dscReadyChanged[partitionIndex] = true;
-          if (!dscPauseStatus) dscStatusChanged = true;
-        }
+      // Armed with no entry delay
+      case 0x9C: {
+        dscProcessNoEntryDelayStatus(partitionIndex, true);
+        dscProcessReadyStatus(partitionIndex, false);
         return;
       }
     }
@@ -1003,7 +763,7 @@ void dscProcessPanelStatus2(uint8_t partition, uint8_t dscPanelByte) {
 }
 
 
-void dscProcessPanelStatus4(uint8_t partition, uint8_t dscPanelByte) {
+void dscProcessPanelStatus4(uint8_t partition, uint8_t panelByte) {
   if (partition == 0 || partition > dscPartitions) return;
   uint8_t partitionIndex = partition - 1;
 
@@ -1013,50 +773,10 @@ void dscProcessPanelStatus4(uint8_t partition, uint8_t dscPanelByte) {
   //   dscAlarmZones[1] and dscAlarmZonesChanged[1]: Bit 0 = Zone 9 ... Bit 7 = Zone 16
   //   ...
   //   dscAlarmZones[7] and dscAlarmZonesChanged[7]: Bit 0 = Zone 57 ... Bit 7 = Zone 64
-  if (dscPanelData[dscPanelByte] <= 0x1F) {
-    dscAlarmZonesStatusChanged = true;
-
-    dscAlarm[partitionIndex] = true;
-    if (dscAlarm[partitionIndex] != dscPreviousAlarm[partitionIndex]) {
-      dscPreviousAlarm[partitionIndex] = dscAlarm[partitionIndex];
-      dscAlarmChanged[partitionIndex] = true;
-      if (!dscPauseStatus) dscStatusChanged = true;
-    }
-
-    dscEntryDelay[partitionIndex] = false;
-    if (dscEntryDelay[partitionIndex] != dscPreviousEntryDelay[partitionIndex]) {
-      dscPreviousEntryDelay[partitionIndex] = dscEntryDelay[partitionIndex];
-      dscEntryDelayChanged[partitionIndex] = true;
-      if (!dscPauseStatus) dscStatusChanged = true;
-    }
-
-    uint8_t maxZones = dscZones * 8;
-    if (maxZones > 32) maxZones -= 32;
-    else return;
-    for (uint8_t zoneCount = 0; zoneCount < maxZones; zoneCount++) {
-      if (dscPanelData[dscPanelByte] == zoneCount) {
-        if (zoneCount < 8) {
-          bitWrite(dscAlarmZones[4], zoneCount, 1);
-          bitWrite(dscAlarmZonesChanged[4], zoneCount, 1);
-          if (!dscPauseStatus) dscStatusChanged = true;
-        }
-        else if (zoneCount >= 8 && zoneCount < 16) {
-          bitWrite(dscAlarmZones[5], (zoneCount - 8), 1);
-          bitWrite(dscAlarmZonesChanged[5], (zoneCount - 8), 1);
-          if (!dscPauseStatus) dscStatusChanged = true;
-        }
-        else if (zoneCount >= 16 && zoneCount < 24) {
-          bitWrite(dscAlarmZones[6], (zoneCount - 16), 1);
-          bitWrite(dscAlarmZonesChanged[6], (zoneCount - 16), 1);
-          if (!dscPauseStatus) dscStatusChanged = true;
-        }
-        else if (zoneCount >= 24 && zoneCount < 32) {
-          bitWrite(dscAlarmZones[7], (zoneCount - 24), 1);
-          bitWrite(dscAlarmZonesChanged[7], (zoneCount - 24), 1);
-          if (!dscPauseStatus) dscStatusChanged = true;
-        }
-      }
-    }
+  if (dscPanelData[panelByte] <= 0x1F) {
+    dscProcessAlarmStatus(partitionIndex, true);
+    dscProcessEntryDelayStatus(partitionIndex, false);
+    dscProcessAlarmZones(panelByte, 4, 0, 1);
     return;
   }
 
@@ -1066,70 +786,137 @@ void dscProcessPanelStatus4(uint8_t partition, uint8_t dscPanelByte) {
   //   dscAlarmZones[1] and dscAlarmZonesChanged[1]: Bit 0 = Zone 9 ... Bit 7 = Zone 16
   //   ...
   //   dscAlarmZones[7] and dscAlarmZonesChanged[7]: Bit 0 = Zone 57 ... Bit 7 = Zone 64
-  if (dscPanelData[dscPanelByte] >= 0x20 && dscPanelData[dscPanelByte] <= 0x3F) {
-    dscAlarmZonesStatusChanged = true;
+  if (dscPanelData[panelByte] >= 0x20 && dscPanelData[panelByte] <= 0x3F) {
+    dscProcessAlarmZones(panelByte, 4, 0x20, 0);
+    return;
+  }
+}
 
-    uint8_t maxZones = dscZones * 8;
-    if (maxZones > 32) maxZones -= 32;
-    else return;
-    for (uint8_t zoneCount = 0; zoneCount < maxZones; zoneCount++) {
-      if (dscPanelData[dscPanelByte] == 0x20 + zoneCount) {
-        if (zoneCount < 8) {
-          bitWrite(dscAlarmZones[4], zoneCount, 0);
-          bitWrite(dscAlarmZonesChanged[4], zoneCount, 1);
-          if (!dscPauseStatus) dscStatusChanged = true;
-        }
-        else if (zoneCount >= 8 && zoneCount < 16) {
-          bitWrite(dscAlarmZones[5], (zoneCount - 8), 0);
-          bitWrite(dscAlarmZonesChanged[5], (zoneCount - 8), 1);
-          if (!dscPauseStatus) dscStatusChanged = true;
-        }
-        else if (zoneCount >= 16 && zoneCount < 24) {
-          bitWrite(dscAlarmZones[6], (zoneCount - 16), 0);
-          bitWrite(dscAlarmZonesChanged[6], (zoneCount - 16), 1);
-          if (!dscPauseStatus) dscStatusChanged = true;
-        }
-        else if (zoneCount >= 24 && zoneCount < 32) {
-          bitWrite(dscAlarmZones[7], (zoneCount - 24), 0);
-          bitWrite(dscAlarmZonesChanged[7], (zoneCount - 24), 1);
-          if (!dscPauseStatus) dscStatusChanged = true;
-        }
-      }
-    }
+
+void dscProcessPanelStatus5(uint8_t partition, uint8_t panelByte) {
+  if (partition == 0 || partition > dscPartitions) return;
+  uint8_t partitionIndex = partition - 1;
+
+  /*
+   *  Armed by access codes 35-95
+   *  0x00 - 0x04: Access codes 35-39
+   *  0x05 - 0x39: Access codes 43-95
+   */
+  if (dscPanelData[panelByte] <= 0x39) {
+    uint8_t dscCode = dscPanelData[panelByte] + 0x23;
+    dscProcessPanelAccessCode(partitionIndex, dscCode, false);
     return;
   }
 
-}
-
-
-// Processes zones 33-64 status
-void dscProcessPanel_0xE6() {
-  if (!dscValidCRC()) return;
-
-  switch (dscPanelData[2]) {
-    case 0x09: dscProcessPanel_0xE6_0x09(); return;
-    case 0x0B: dscProcessPanel_0xE6_0x0B(); return;
-    case 0x0D: dscProcessPanel_0xE6_0x0D(); return;
-    case 0x0F: dscProcessPanel_0xE6_0x0F(); return;
+  /*
+   *  Disarmed by access codes 35-95
+   *  0x3A - 0x3E: Access codes 35-39
+   *  0x3F - 0x73: Access codes 43-95
+   */
+  if (dscPanelData[panelByte] >= 0x3A && dscPanelData[panelByte] <= 0x73) {
+    uint8_t dscCode = dscPanelData[panelByte] - 0x17;
+    dscProcessPanelAccessCode(partitionIndex, dscCode, false);
+    return;
   }
 }
 
 
-// Open zones 33-40 status is stored in dscOpenZones[4] and dscOpenZonesChanged[4]: Bit 0 = Zone 33 ... Bit 7 = Zone 40
-void dscProcessPanel_0xE6_0x09() {
-  if (dscZones > 4) {
-    dscOpenZones[4] = dscPanelData[3];
-    uint8_t zonesChanged = dscOpenZones[4] ^ dscPreviousOpenZones[4];
-    if (zonesChanged != 0) {
-      dscPreviousOpenZones[4] = dscOpenZones[4];
-      dscOpenZonesStatusChanged = true;
-      if (!dscPauseStatus) dscStatusChanged = true;
+void dscProcessReadyStatus(uint8_t partitionIndex, bool status) {
+  dscReady[partitionIndex] = status;
+  if (dscReady[partitionIndex] != dscPreviousReady[partitionIndex]) {
+    dscPreviousReady[partitionIndex] = dscReady[partitionIndex];
+    dscReadyChanged[partitionIndex] = true;
+    if (!dscPauseStatus) dscStatusChanged = true;
+  }
+}
 
-      for (uint8_t zoneBit = 0; zoneBit < 8; zoneBit++) {
-        if (bitRead(zonesChanged, zoneBit)) {
-          bitWrite(dscOpenZonesChanged[4], zoneBit, 1);
-          if (bitRead(dscPanelData[3], zoneBit)) bitWrite(dscOpenZones[4], zoneBit, 1);
-          else bitWrite(dscOpenZones[4], zoneBit, 0);
+
+void dscProcessAlarmStatus(uint8_t partitionIndex, bool status) {
+  dscAlarm[partitionIndex] = status;
+  if (dscAlarm[partitionIndex] != dscPreviousAlarm[partitionIndex]) {
+    dscPreviousAlarm[partitionIndex] = dscAlarm[partitionIndex];
+    dscAlarmChanged[partitionIndex] = true;
+    if (!dscPauseStatus) dscStatusChanged = true;
+  }
+}
+
+
+void dscProcessExitDelayStatus(uint8_t partitionIndex, bool status) {
+  dscExitDelay[partitionIndex] = status;
+  if (dscExitDelay[partitionIndex] != dscPreviousExitDelay[partitionIndex]) {
+    dscPreviousExitDelay[partitionIndex] = dscExitDelay[partitionIndex];
+    dscExitDelayChanged[partitionIndex] = true;
+    if (!dscPauseStatus) dscStatusChanged = true;
+  }
+}
+
+
+void dscProcessEntryDelayStatus(uint8_t partitionIndex, bool status) {
+  dscEntryDelay[partitionIndex] = status;
+  if (dscEntryDelay[partitionIndex] != dscPreviousEntryDelay[partitionIndex]) {
+    dscPreviousEntryDelay[partitionIndex] = dscEntryDelay[partitionIndex];
+    dscEntryDelayChanged[partitionIndex] = true;
+    if (!dscPauseStatus) dscStatusChanged = true;
+  }
+}
+
+
+void dscProcessNoEntryDelayStatus(uint8_t partitionIndex, bool status) {
+  dscNoEntryDelay[partitionIndex] = status;
+  if (dscNoEntryDelay[partitionIndex] != dscPreviousNoEntryDelay[partitionIndex]) {
+    dscPreviousNoEntryDelay[partitionIndex] = dscNoEntryDelay[partitionIndex];
+    dscArmedChanged[partitionIndex] = true;
+    if (!dscPauseStatus) dscStatusChanged = true;
+  }
+}
+
+
+void dscProcessZoneStatus(uint8_t zonesByte, uint8_t panelByte) {
+  dscOpenZones[zonesByte] = dscPanelData[panelByte];
+  uint8_t zonesChanged = dscOpenZones[zonesByte] ^ dscPreviousOpenZones[zonesByte];
+  if (zonesChanged != 0) {
+    dscPreviousOpenZones[zonesByte] = dscOpenZones[zonesByte];
+    dscOpenZonesStatusChanged = true;
+    if (!dscPauseStatus) dscStatusChanged = true;
+
+    for (uint8_t zoneBit = 0; zoneBit < 8; zoneBit++) {
+      if (bitRead(zonesChanged, zoneBit)) {
+        bitWrite(dscOpenZonesChanged[zonesByte], zoneBit, 1);
+        if (bitRead(dscPanelData[panelByte], zoneBit)) bitWrite(dscOpenZones[zonesByte], zoneBit, 1);
+        else bitWrite(dscOpenZones[zonesByte], zoneBit, 0);
+      }
+    }
+  }
+}
+
+void dscProcessTime(uint8_t panelByte) {
+  uint8_t year3 = dscPanelData[panelByte] >> 4;
+  uint8_t year4 = dscPanelData[panelByte] & 0x0F;
+  dscYear = (year3 * 10) + year4;
+  if (year3 >= 7) dscYear += 1900;
+  else dscYear += 2000;
+  dscMonth = dscPanelData[panelByte + 1] << 2; dscMonth >>=4;
+  uint8_t day1 = dscPanelData[panelByte + 1] << 6; day1 >>= 3;
+  uint8_t day2 = dscPanelData[panelByte + 2] >> 5;
+  dscDay = day1 | day2;
+  dscHour = dscPanelData[panelByte + 2] & 0x1F;
+  dscMinute = dscPanelData[panelByte + 3] >> 2;
+}
+
+
+void dscProcessAlarmZones(uint8_t panelByte, uint8_t startByte, uint8_t zoneCountOffset, uint8_t writeValue) {
+  uint8_t maxZones = dscZones * 8;
+  if (maxZones > 32) {
+    if (startByte < 4) maxZones = 32;
+    else maxZones -= 32;
+  }
+  else if (startByte >= 4) return;
+
+  for (uint8_t zoneCount = 0; zoneCount < maxZones; zoneCount++) {
+    if (dscPanelData[panelByte] == zoneCount + zoneCountOffset) {
+      for (uint8_t zoneRange = 0; zoneRange <= 3; zoneRange++) {
+        if (zoneCount >= (zoneRange * 8) && zoneCount < ((zoneRange * 8) + 8)) {
+          dscProcessAlarmZonesStatus(startByte + zoneRange, zoneCount, writeValue);
         }
       }
     }
@@ -1137,67 +924,47 @@ void dscProcessPanel_0xE6_0x09() {
 }
 
 
-// Open zones 41-48 status is stored in dscOpenZones[5] and dscOpenZonesChanged[5]: Bit 0 = Zone 41 ... Bit 7 = Zone 48
-void dscProcessPanel_0xE6_0x0B() {
-  if (dscZones > 5) {
-    dscOpenZones[5] = dscPanelData[3];
-    uint8_t zonesChanged = dscOpenZones[5] ^ dscPreviousOpenZones[5];
-    if (zonesChanged != 0) {
-      dscPreviousOpenZones[5] = dscOpenZones[5];
-      dscOpenZonesStatusChanged = true;
-      if (!dscPauseStatus) dscStatusChanged = true;
+void dscProcessAlarmZonesStatus(uint8_t zonesByte, uint8_t zoneCount, uint8_t writeValue) {
+  uint8_t zonesRange = zonesByte;
+  if (zonesRange >= 4) zonesRange -= 4;
 
-      for (uint8_t zoneBit = 0; zoneBit < 8; zoneBit++) {
-        if (bitRead(zonesChanged, zoneBit)) {
-          bitWrite(dscOpenZonesChanged[5], zoneBit, 1);
-          if (bitRead(dscPanelData[3], zoneBit)) bitWrite(dscOpenZones[5], zoneBit, 1);
-          else bitWrite(dscOpenZones[5], zoneBit, 0);
-        }
-      }
-    }
+  bitWrite(dscAlarmZones[zonesByte], (zoneCount - (zonesRange * 8)), writeValue);
+
+  if (bitRead(dscPreviousAlarmZones[zonesByte], (zoneCount - (zonesRange * 8))) != writeValue) {
+    bitWrite(dscPreviousAlarmZones[zonesByte], (zoneCount - (zonesRange * 8)), writeValue);
+    bitWrite(dscAlarmZonesChanged[zonesByte], (zoneCount - (zonesRange * 8)), 1);
+
+    dscAlarmZonesStatusChanged = true;
+    if (!dscPauseStatus) dscStatusChanged = true;
   }
 }
 
 
-// Open zones 49-56 status is stored in dscOpenZones[6] and dscOpenZonesChanged[6]: Bit 0 = Zone 49 ... Bit 7 = Zone 56
-void dscProcessPanel_0xE6_0x0D() {
-  if (dscZones > 6) {
-    dscOpenZones[6] = dscPanelData[3];
-    uint8_t zonesChanged = dscOpenZones[6] ^ dscPreviousOpenZones[6];
-    if (zonesChanged != 0) {
-      dscPreviousOpenZones[6] = dscOpenZones[6];
-      dscOpenZonesStatusChanged = true;
-      if (!dscPauseStatus) dscStatusChanged = true;
+void dscProcessArmed(uint8_t partitionIndex, bool armedStatus) {
+  dscArmedStay[partitionIndex] = armedStatus;
+  dscArmedAway[partitionIndex] = armedStatus;
+  dscArmed[partitionIndex] = armedStatus;
 
-      for (uint8_t zoneBit = 0; zoneBit < 8; zoneBit++) {
-        if (bitRead(zonesChanged, zoneBit)) {
-          bitWrite(dscOpenZonesChanged[6], zoneBit, 1);
-          if (bitRead(dscPanelData[3], zoneBit)) bitWrite(dscOpenZones[6], zoneBit, 1);
-          else bitWrite(dscOpenZones[6], zoneBit, 0);
-        }
-      }
-    }
+  if (dscArmed[partitionIndex] != dscPreviousArmed[partitionIndex]) {
+    dscPreviousArmed[partitionIndex] = dscArmed[partitionIndex];
+    dscArmedChanged[partitionIndex] = true;
+    if (!dscPauseStatus) dscStatusChanged = true;
   }
 }
 
 
-// Open zones 57-64 status is stored in dscOpenZones[7] and dscOpenZonesChanged[7]: Bit 0 = Zone 57 ... Bit 7 = Zone 64
-void dscProcessPanel_0xE6_0x0F() {
-  if (dscZones > 7) {
-    dscOpenZones[7] = dscPanelData[3];
-    uint8_t zonesChanged = dscOpenZones[7] ^ dscPreviousOpenZones[7];
-    if (zonesChanged != 0) {
-      dscPreviousOpenZones[7] = dscOpenZones[7];
-      dscOpenZonesStatusChanged = true;
-      if (!dscPauseStatus) dscStatusChanged = true;
+void dscProcessPanelAccessCode(uint8_t partitionIndex, uint8_t dscCode, bool accessCodeIncrease) {
+  if (accessCodeIncrease) {
+    if (dscCode >= 35) dscCode += 5;
+  }
+  else {
+    if (dscCode >= 40) dscCode += 3;
+  }
 
-      for (uint8_t zoneBit = 0; zoneBit < 8; zoneBit++) {
-        if (bitRead(zonesChanged, zoneBit)) {
-          bitWrite(dscOpenZonesChanged[7], zoneBit, 1);
-          if (bitRead(dscPanelData[3], zoneBit)) bitWrite(dscOpenZones[7], zoneBit, 1);
-          else bitWrite(dscOpenZones[7], zoneBit, 0);
-        }
-      }
-    }
+  dscAccessCode[partitionIndex] = dscCode;
+  if (dscAccessCode[partitionIndex] != dscPreviousAccessCode[partitionIndex]) {
+    dscPreviousAccessCode[partitionIndex] = dscAccessCode[partitionIndex];
+    dscAccessCodeChanged[partitionIndex] = true;
+    if (!dscPauseStatus) dscStatusChanged = true;
   }
 }
