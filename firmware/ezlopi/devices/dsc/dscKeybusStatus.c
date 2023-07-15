@@ -68,11 +68,11 @@ bool dscSetTime(unsigned int year, uint8_t month, uint8_t day, uint8_t hour, uin
   if (dscWritePartition != timePartition) {
     uint8_t previousPartition = dscWritePartition;
     dscWritePartition = timePartition;
-    dscWriteKeys(timeEntry, false);
+    dscWriteKeys(timeEntry);
     while (dscWriteKeyPending || dscWriteKeysPending) vTaskDelay(pdMS_TO_TICKS(1));
     dscWritePartition = previousPartition;
   }
-  else dscWriteKeys(timeEntry, false);
+  else dscWriteKeys(timeEntry);
 
   return true;
 }

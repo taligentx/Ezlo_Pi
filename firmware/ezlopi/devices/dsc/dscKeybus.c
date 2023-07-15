@@ -341,42 +341,30 @@ void dscWriteKey(int receivedKey) {
 }
 
 
-// Sets up writes for multiple keys sent as a char array
-void dscWriteKeys(const char *receivedKeys, bool blockingWrite) {
+// Writes multiple keys sent as a char array - blocks until the write is complete
+void dscWriteKeys(const char *receivedKeys) {
 
-  // Blocks if a previous write for a single key is in progress
-  while (dscWriteKeyPending) vTaskDelay(pdMS_TO_TICKS(1));
+  // Blocks if a previous write is in progress
+  while (dscWriteKeyPending || dscWriteKeysPending) vTaskDelay(pdMS_TO_TICKS(1));
 
-  dscWriteKeysArray = receivedKeys;
-
-  if (dscWriteKeysArray[0] != '\0') {
+  if (receivedKeys[0] != '\0') {
     dscWriteKeysPending = true;
     dscWriteReady = false;
   }
 
-  // Optionally blocks until the write is complete, necessary if the received keys char array is ephemeral
-  if (blockingWrite) {
-    while (dscWriteKeysPending) {
-      dscWriteKeysLoop(dscWriteKeysArray);
-      vTaskDelay(pdMS_TO_TICKS(1));
-    }
-  }
-  else dscWriteKeysLoop(dscWriteKeysArray);
-}
-
-
-// Writes multiple keys from a char array
-void dscWriteKeysLoop(const char *writeKeysArray) {
-  static uint8_t writeCounter = 0;
-  if (!dscWriteKeyPending && dscWriteKeysPending && writeCounter < strlen(writeKeysArray)) {
-    if (writeKeysArray[writeCounter] != '\0') {
-      dscSetWriteKey(writeKeysArray[writeCounter]);
-      writeCounter++;
-      if (writeKeysArray[writeCounter] == '\0') {
-        dscWriteKeysPending = false;
-        writeCounter = 0;
+  while (dscWriteKeysPending) {
+    static uint8_t writeCounter = 0;
+    if (!dscWriteKeyPending && dscWriteKeysPending && writeCounter < strlen(receivedKeys)) {
+      if (receivedKeys[writeCounter] != '\0') {
+        dscSetWriteKey(receivedKeys[writeCounter]);
+        writeCounter++;
+        if (receivedKeys[writeCounter] == '\0') {
+          dscWriteKeysPending = false;
+          writeCounter = 0;
+        }
       }
     }
+    vTaskDelay(pdMS_TO_TICKS(1));
   }
 }
 

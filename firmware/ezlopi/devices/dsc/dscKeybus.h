@@ -31,34 +31,19 @@
 #define dscDataSize 16     // Maximum bytes of a Keybus command
 #define dscWriteSize 6     // Maximum types of panel commands to write data to the panel from dscWriteData[]
 
-// Control functions
+// Library control
 void dsc_init(void);       // Initializes the library
 void dsc_stop();           // Disables the clock GPIO interrupt and data timer interrupt
 void dsc_reset();          // Resets the state of all status components as changed for programs to get the current status
 
-// Writes a single key - nonblocking unless a previous write is in progress
-void dscWriteKey(int receivedKey);
-
-// Writes multiple keys from a char array
-//
-// If blockingWrite is set to false, this is nonblocking unless there is a previous write in progress - in this case,
-// the program must keep the char array defined at least until the write is complete.
-//
-// If the char array is ephemeral, check if the write is complete by checking dscWriteReady or set blockingWrite to true to
-// block until the write is complete.
-void dscWriteKeys(const char * receivedKeys, bool blockingWrite);
-
-// Write control
-uint8_t dscWritePartition;  // Set to the partition number to use for writing keys to the panel for virtual keypad
-bool dscWriteReady;         // Check that this status is true to verify that the library is ready to write a key
+// Virtual keypad
+void dscWriteKey(int receivedKey);             // Writes a single key - nonblocking unless a previous write is in progress
+void dscWriteKeys(const char *receivedKeys);  // Writes multiple keys from a char array - blocks until the write is complete
+bool dscWriteReady;         // True when the library is ready to write a key
+uint8_t dscWritePartition;  // Set to the partition number to use for writing keys to the panel
 
 // Exit delay target states - these can be checked by programs using dscExitState[dscPartitions]
 enum dscExitStateValues{DSC_EXIT_NONE, DSC_EXIT_STAY, DSC_EXIT_AWAY, DSC_EXIT_NO_ENTRY_DELAY};
-
-// Prints output
-void dscPrintPanelBinary(bool printSpaces);    // Includes spaces between bytes by default
-void dscPrintPanelCommand();                   // Prints the panel command as hex
-void dscPrintPanelMessage();                   // Prints the decoded panel message
 
 // Panel time
 bool dscTimestampChanged;          // True after the panel sends a timestamped message
@@ -149,6 +134,7 @@ bool dscPanelDataAvailable;
 #define bitClear(value, bit) ((value) &= ~(1UL << (bit)))
 #define bitWrite(value, bit, bitvalue) (bitvalue ? bitSet(value, bit) : bitClear(value, bit))
 
+// Status processing
 void dscProcessPanelStatus();
 void dscProcessPanelStatus0(uint8_t partition, uint8_t panelByte);
 void dscProcessPanelStatus1(uint8_t partition, uint8_t panelByte);
@@ -182,11 +168,9 @@ void dscProcessArmed(uint8_t partitionIndex, bool armedStatus);
 void dscProcessPanelAccessCode(uint8_t partitionIndex, uint8_t dscCode, bool accessCodeIncrease);
 
 bool dscValidCRC();
-void dscWriteKeysLoop(const char * writeKeysArray);
 void dscSetWriteKey(int receivedKey);
 bool dscRedundantPanelData(uint8_t previousCmd[], volatile uint8_t currentCmd[], uint8_t checkedBytes);
 
-const char *dscWriteKeysArray;
 bool dscWriteKeysPending;
 bool dscWriteAccessCode[dscPartitions];
 bool dscPreviousTrouble;
