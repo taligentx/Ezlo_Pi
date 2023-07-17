@@ -8,7 +8,7 @@ void dsc_reset() {
   dscTroubleChanged = true;
   dscPowerChanged = true;
   dscBatteryChanged = true;
-  for (uint8_t partition = 0; partition < dscPartitions; partition++) {
+  for (uint8_t partition = 0; partition < DSC_PARTITIONS; partition++) {
     dscReadyChanged[partition] = true;
     dscArmedChanged[partition] = true;
     dscAlarmChanged[partition] = true;
@@ -17,7 +17,7 @@ void dsc_reset() {
   }
   dscOpenZonesStatusChanged = true;
   dscAlarmZonesStatusChanged = true;
-  for (uint8_t zoneGroup = 0; zoneGroup < dscZones; zoneGroup++) {
+  for (uint8_t zoneGroup = 0; zoneGroup < DSC_ZONES; zoneGroup++) {
     dscOpenZonesChanged[zoneGroup] = 0xFF;
     dscAlarmZonesChanged[zoneGroup] = 0xFF;
   }
@@ -98,12 +98,12 @@ void dscProcessPanelStatus() {
     partitionStart = 0;
     if (dscKeybusVersion1) partitionCount = 2;  // Handles earlier panels that support up to 2 partitions
     else partitionCount = 4;
-    if (dscPartitions < partitionCount) partitionCount = dscPartitions;
+    if (DSC_PARTITIONS < partitionCount) partitionCount = DSC_PARTITIONS;
   }
-  else if (dscPartitions > 4 && dscPanelData[0] == 0x1B) {
+  else if (DSC_PARTITIONS > 4 && dscPanelData[0] == 0x1B) {
     partitionStart = 4;
     partitionCount = 8;
-    if (dscPartitions < partitionCount) partitionCount = dscPartitions;
+    if (DSC_PARTITIONS < partitionCount) partitionCount = DSC_PARTITIONS;
   }
 
   // Sets status per partition
@@ -401,7 +401,7 @@ void dscProcessPanel_0x27() {
 // Zones 9-16 status is stored in dscOpenZones[1] and dscOpenZonesChanged[1]: Bit 0 = Zone 9 ... Bit 7 = Zone 16
 void dscProcessPanel_0x2D() {
   if (!dscValidCRC()) return;
-  if (dscZones < 2) return;
+  if (DSC_ZONES < 2) return;
   dscProcessZoneStatus(1, 6);
 }
 
@@ -409,7 +409,7 @@ void dscProcessPanel_0x2D() {
 // Zones 17-24 status is stored in dscOpenZones[2] and dscOpenZonesChanged[2]: Bit 0 = Zone 17 ... Bit 7 = Zone 24
 void dscProcessPanel_0x34() {
   if (!dscValidCRC()) return;
-  if (dscZones < 3) return;
+  if (DSC_ZONES < 3) return;
   dscProcessZoneStatus(2, 6);
 }
 
@@ -417,7 +417,7 @@ void dscProcessPanel_0x34() {
 // Zones 25-32 status is stored in dscOpenZones[3] and dscOpenZonesChanged[3]: Bit 0 = Zone 25 ... Bit 7 = Zone 32
 void dscProcessPanel_0x3E() {
   if (!dscValidCRC()) return;
-  if (dscZones < 4) return;
+  if (DSC_ZONES < 4) return;
   dscProcessZoneStatus(3, 6);
 }
 
@@ -432,7 +432,7 @@ void dscProcessPanel_0x87() {
   if (!dscValidCRC()) return;
 
   // Resets flag to write access code if needed when writing command output keys
-  for (uint8_t partitionIndex = 0; partitionIndex < dscPartitions; partitionIndex++) {
+  for (uint8_t partitionIndex = 0; partitionIndex < DSC_PARTITIONS; partitionIndex++) {
     dscWriteAccessCode[partitionIndex] = false;
   }
 
@@ -499,25 +499,25 @@ void dscProcessPanel_0xE6() {
 
 // Zones 33-40 status is stored in dscOpenZones[4] and dscOpenZonesChanged[4]: Bit 0 = Zone 33 ... Bit 7 = Zone 40
 void dscProcessPanel_0xE6_0x09() {
-  if (dscZones > 4) dscProcessZoneStatus(4, 3);
+  if (DSC_ZONES > 4) dscProcessZoneStatus(4, 3);
 }
 
 
 // Zones 41-48 status is stored in dscOpenZones[5] and dscOpenZonesChanged[5]: Bit 0 = Zone 41 ... Bit 7 = Zone 48
 void dscProcessPanel_0xE6_0x0B() {
-  if (dscZones > 5) dscProcessZoneStatus(5, 3);
+  if (DSC_ZONES > 5) dscProcessZoneStatus(5, 3);
 }
 
 
 // Zones 49-56 status is stored in dscOpenZones[6] and dscOpenZonesChanged[6]: Bit 0 = Zone 49 ... Bit 7 = Zone 56
 void dscProcessPanel_0xE6_0x0D() {
-  if (dscZones > 6) dscProcessZoneStatus(6, 3);
+  if (DSC_ZONES > 6) dscProcessZoneStatus(6, 3);
 }
 
 
 // Zones 57-64 status is stored in dscOpenZones[7] and dscOpenZonesChanged[7]: Bit 0 = Zone 57 ... Bit 7 = Zone 64
 void dscProcessPanel_0xE6_0x0F() {
-  if (dscZones > 7) dscProcessZoneStatus(7, 3);
+  if (DSC_ZONES > 7) dscProcessZoneStatus(7, 3);
 }
 
 
@@ -538,7 +538,7 @@ void dscProcessPanel_0xE6_0x1A() {
 
 void dscProcessPanel_0xEB() {
   if (!dscValidCRC()) return;
-  if (dscPartitions < 3) return;
+  if (DSC_PARTITIONS < 3) return;
 
   dscProcessTime(3);
 
@@ -634,7 +634,7 @@ void dscProcessPanelStatus0(uint8_t partition, uint8_t panelByte) {
   }
 
   // Processes partition-specific status
-  if (partition > dscPartitions) return;  // Ensures that only the configured number of partitions are processed
+  if (partition > DSC_PARTITIONS) return;  // Ensures that only the configured number of partitions are processed
   uint8_t partitionIndex = partition - 1;
 
   // Disarmed
@@ -696,7 +696,7 @@ void dscProcessPanelStatus0(uint8_t partition, uint8_t panelByte) {
 
 
 void dscProcessPanelStatus1(uint8_t partition, uint8_t panelByte) {
-  if (partition == 0 || partition > dscPartitions) return;
+  if (partition == 0 || partition > DSC_PARTITIONS) return;
   uint8_t partitionIndex = partition - 1;
 
   switch (dscPanelData[panelByte]) {
@@ -711,7 +711,7 @@ void dscProcessPanelStatus1(uint8_t partition, uint8_t panelByte) {
 
 
 void dscProcessPanelStatus2(uint8_t partition, uint8_t panelByte) {
-  if (partition == 0 || partition > dscPartitions) return;
+  if (partition == 0 || partition > DSC_PARTITIONS) return;
   uint8_t partitionIndex = partition - 1;
 
   // Armed: stay and Armed: away
@@ -764,7 +764,7 @@ void dscProcessPanelStatus2(uint8_t partition, uint8_t panelByte) {
 
 
 void dscProcessPanelStatus4(uint8_t partition, uint8_t panelByte) {
-  if (partition == 0 || partition > dscPartitions) return;
+  if (partition == 0 || partition > DSC_PARTITIONS) return;
   uint8_t partitionIndex = partition - 1;
 
   // Zone alarm, zones 33-64
@@ -794,7 +794,7 @@ void dscProcessPanelStatus4(uint8_t partition, uint8_t panelByte) {
 
 
 void dscProcessPanelStatus5(uint8_t partition, uint8_t panelByte) {
-  if (partition == 0 || partition > dscPartitions) return;
+  if (partition == 0 || partition > DSC_PARTITIONS) return;
   uint8_t partitionIndex = partition - 1;
 
   /*
@@ -905,7 +905,7 @@ void dscProcessTime(uint8_t panelByte) {
 
 
 void dscProcessAlarmZones(uint8_t panelByte, uint8_t startByte, uint8_t zoneCountOffset, uint8_t writeValue) {
-  uint8_t maxZones = dscZones * 8;
+  uint8_t maxZones = DSC_ZONES * 8;
   if (maxZones > 32) {
     if (startByte < 4) maxZones = 32;
     else maxZones -= 32;

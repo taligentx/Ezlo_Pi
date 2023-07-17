@@ -11,7 +11,7 @@ static void dscStatusExample() {
     xSemaphoreTake(dscDataAvailable, portMAX_DELAY);
 
     // If the Keybus data buffer is exceeded, the program is too busy to process all Keybus commands.  Call
-    // dscProcess() more often, or increase dscBufferSize in the library: dscKeybus.h
+    // dscProcess() more often, or increase DSC_BUFFER_SIZE in the library: dscKeybus.h
     if (dscBufferOverflow) {
       TRACE_E("DSC Keybus buffer overflow");
       dscBufferOverflow = false;
@@ -34,7 +34,7 @@ static void dscStatusExample() {
       }
 
       // Checks status per partition
-      for (uint8_t partition = 0; partition < dscPartitions; partition++) {
+      for (uint8_t partition = 0; partition < DSC_PARTITIONS; partition++) {
 
         // Checks ready status
         if (dscReadyChanged[partition]) {
@@ -125,7 +125,7 @@ static void dscStatusExample() {
       //   openZones[7] and openZonesChanged[7]: Bit 0 = Zone 57 ... Bit 7 = Zone 64
       if (dscOpenZonesStatusChanged) {
         dscOpenZonesStatusChanged = false;                           // Resets the open zones status flag
-        for (uint8_t zoneGroup = 0; zoneGroup < dscZones; zoneGroup++) {
+        for (uint8_t zoneGroup = 0; zoneGroup < DSC_ZONES; zoneGroup++) {
           for (uint8_t zoneBit = 0; zoneBit < 8; zoneBit++) {
             if (bitRead(dscOpenZonesChanged[zoneGroup], zoneBit)) {  // Checks an individual open zone status flag
               bitWrite(dscOpenZonesChanged[zoneGroup], zoneBit, 0);  // Resets the individual open zone status flag
@@ -148,7 +148,7 @@ static void dscStatusExample() {
       //   alarmZones[7] and alarmZonesChanged[7]: Bit 0 = Zone 57 ... Bit 7 = Zone 64
       if (dscAlarmZonesStatusChanged) {
         dscAlarmZonesStatusChanged = false;                           // Resets the alarm zones status flag
-        for (uint8_t zoneGroup = 0; zoneGroup < dscZones; zoneGroup++) {
+        for (uint8_t zoneGroup = 0; zoneGroup < DSC_ZONES; zoneGroup++) {
           for (uint8_t zoneBit = 0; zoneBit < 8; zoneBit++) {
             if (bitRead(dscAlarmZonesChanged[zoneGroup], zoneBit)) {  // Checks an individual alarm zone status flag
               bitWrite(dscAlarmZonesChanged[zoneGroup], zoneBit, 0);  // Resets the individual alarm zone status flag
@@ -261,7 +261,7 @@ static void dscProcess() {
     // Copies data from the buffer to dscPanelData[]
     static uint8_t panelBufferIndex = 1;
     uint8_t dataIndex = panelBufferIndex - 1;
-    for (uint8_t i = 0; i < dscDataSize; i++) dscPanelData[i] = dscPanelBuffer[dataIndex][i];
+    for (uint8_t i = 0; i < DSC_DATA_SIZE; i++) dscPanelData[i] = dscPanelBuffer[dataIndex][i];
     dscPanelBitCount = dscPanelBufferBitCount[dataIndex];
     dscPanelByteCount = dscPanelBufferByteCount[dataIndex];
     panelBufferIndex++;
@@ -293,23 +293,23 @@ static void dscProcess() {
     taskEXIT_CRITICAL(&dscSpinlock);
 
     // Skips redundant data sent constantly while in installer programming
-    static uint8_t previousCmd0A[dscDataSize], previousCmd0F[dscDataSize], previousCmdE6_20[dscDataSize], previousCmdE6_21[dscDataSize];
+    static uint8_t previousCmd0A[DSC_DATA_SIZE], previousCmd0F[DSC_DATA_SIZE], previousCmdE6_20[DSC_DATA_SIZE], previousCmdE6_21[DSC_DATA_SIZE];
     switch (dscPanelData[0]) {
       case 0x0A:  // Partition 1 status in programming
-        if (dscRedundantPanelData(previousCmd0A, dscPanelData, dscDataSize)) continue;
+        if (dscRedundantPanelData(previousCmd0A, dscPanelData, DSC_DATA_SIZE)) continue;
         break;
 
       case 0x0F:  // Partition 2 status in programming
-        if (dscRedundantPanelData(previousCmd0F, dscPanelData, dscDataSize)) continue;
+        if (dscRedundantPanelData(previousCmd0F, dscPanelData, DSC_DATA_SIZE)) continue;
         break;
 
       case 0xE6:
-        if (dscPanelData[2] == 0x20 && dscRedundantPanelData(previousCmdE6_20, dscPanelData, dscDataSize)) continue;  // Partition 1 status in programming, zone lights 33-64
-        if (dscPanelData[2] == 0x21 && dscRedundantPanelData(previousCmdE6_21, dscPanelData, dscDataSize)) continue;  // Partition 2 status in programming, zone lights 33-64
+        if (dscPanelData[2] == 0x20 && dscRedundantPanelData(previousCmdE6_20, dscPanelData, DSC_DATA_SIZE)) continue;  // Partition 1 status in programming, zone lights 33-64
+        if (dscPanelData[2] == 0x21 && dscRedundantPanelData(previousCmdE6_21, dscPanelData, DSC_DATA_SIZE)) continue;  // Partition 2 status in programming, zone lights 33-64
         break;
     }
-    if (dscPartitions > 4) {
-      static uint8_t previousCmdE6_03[dscDataSize];
+    if (DSC_PARTITIONS > 4) {
+      static uint8_t previousCmdE6_03[DSC_DATA_SIZE];
       if (dscPanelData[0] == 0xE6 && dscPanelData[2] == 0x03 && dscRedundantPanelData(previousCmdE6_03, dscPanelData, 8)) continue;  // Status in alarm/programming, partitions 5-8
     }
 
@@ -324,8 +324,8 @@ static void dscProcess() {
       case 0x3E: dscProcessPanel_0x3E(); break;                         // Panel status and zones 25-32 status
       case 0x87: dscProcessPanel_0x87(); break;                         // PGM outputs
       case 0xA5: dscProcessPanel_0xA5(); break;                         // Date, time, system status messages - partitions 1-2
-      case 0xE6: if (dscPartitions > 2) dscProcessPanel_0xE6(); break;  // Extended status command split into multiple subcommands to handle up to 8 partitions/64 zones
-      case 0xEB: if (dscPartitions > 2) dscProcessPanel_0xEB(); break;  // Date, time, system status messages - partitions 1-8
+      case 0xE6: if (DSC_PARTITIONS > 2) dscProcessPanel_0xE6(); break;  // Extended status command split into multiple subcommands to handle up to 8 partitions/64 zones
+      case 0xEB: if (DSC_PARTITIONS > 2) dscProcessPanel_0xEB(); break;  // Date, time, system status messages - partitions 1-8
     }
 
     dscPanelDataAvailable = true;
@@ -389,7 +389,7 @@ void dscSetWriteKey(int receivedKey) {
     bool validKey = true;
 
     // Skips writing to disabled partitions or partitions not specified in dscKeybus.h
-    if (dscDisabled[dscWritePartition - 1] || dscPartitions < dscWritePartition) {
+    if (dscDisabled[dscWritePartition - 1] || DSC_PARTITIONS < dscWritePartition) {
       switch (receivedKey) {
         case '/': setPartition = true; validKey = false; break;
       }
@@ -469,76 +469,7 @@ bool dscRedundantPanelData(uint8_t previousCmd[], volatile uint8_t currentCmd[],
   }
   if (redundantData) return true;
   else {
-    for (uint8_t i = 0; i < dscDataSize; i++) previousCmd[i] = currentCmd[i];
-    return false;
-  }
-}
-
-
-// Checks for redundant panel status commands in the ISR
-static bool IRAM_ATTR dscRedundantPanelDataISR(uint8_t previousCmd[], volatile uint8_t currentCmd[], uint8_t checkedBytes) {
-  static uint8_t countCmd05 = 0, countCmd1B = 0;
-  static uint8_t pendingCmd05[dscDataSize], pendingCmd1B[dscDataSize];
-  bool pendingCmd05Mismatch = false, pendingCmd1BMismatch = false;
-  bool redundantData = true;
-
-  // 0x05 and 0x1B status data is verified by requiring multiple identical messages before accepting the new status data
-  for (uint8_t i = 0; i < checkedBytes; i++) {
-    if (previousCmd[i] != currentCmd[i]) {
-      if (currentCmd[0] == 0x05) {
-
-        if (countCmd05 >= dscCommandVerifyCount) {
-          redundantData = false;
-          countCmd05 = 0;
-        }
-        else {
-          if (countCmd05 == 0) {
-            for (uint8_t j = 0; j < dscDataSize; j++) pendingCmd05[j] = currentCmd[j];
-            countCmd05++;
-          }
-          else {
-            for (uint8_t j = 0; j < checkedBytes; j++) {
-              if (pendingCmd05[j] != currentCmd[j]) pendingCmd05Mismatch = true;
-            }
-            if (pendingCmd05Mismatch) {
-              for (uint8_t j = 0; j < dscDataSize; j++) pendingCmd05[j] = currentCmd[j];
-              countCmd05 = 0;
-            }
-            else countCmd05++;
-          }
-        }
-
-      }
-      else if (currentCmd[0] == 0x1B) {
-        if (countCmd1B >= dscCommandVerifyCount) {
-          redundantData = false;
-          countCmd1B = 0;
-        }
-        else {
-          if (countCmd1B == 0) {
-            for (uint8_t j = 0; j < dscDataSize; j++) pendingCmd1B[j] = currentCmd[j];
-            countCmd1B++;
-          }
-          else {
-            for (uint8_t j = 0; j < checkedBytes; j++) {
-              if (pendingCmd1B[j] != currentCmd[j]) pendingCmd1BMismatch = true;
-            }
-            if (pendingCmd1BMismatch) {
-              for (uint8_t j = 0; j < dscDataSize; j++) pendingCmd1B[j] = currentCmd[j];
-              countCmd1B = 0;
-            }
-            else countCmd1B++;
-          }
-        }
-      }
-
-      break;
-    }
-  }
-
-  if (redundantData) return true;
-  else {
-    for (uint8_t i = 0; i < dscDataSize; i++) previousCmd[i] = currentCmd[i];
+    for (uint8_t i = 0; i < DSC_DATA_SIZE; i++) previousCmd[i] = currentCmd[i];
     return false;
   }
 }
@@ -574,16 +505,15 @@ bool IRAM_ATTR dscValidCRC() {
 // data after an interval.
 static void IRAM_ATTR dscClockInterrupt() {
 
-  // Sets up a timer that will call dscDataInterrupt() after dscTimerInterval to read the data line.
+  // Sets up a timer that will call dscDataInterrupt() after DSC_TIMER_INTERVAL to read the data line.
   // Data sent from the panel and keypads/modules has latency after a clock change (observed up to 160us for keypad data).
-  timer_group_set_counter_enable_in_isr(dscTimerGroup, dscTimerNumber, TIMER_START);
+  timer_group_set_counter_enable_in_isr(DSC_TIMER_GROUP, DSC_TIMER_NUMBER, TIMER_START);
 
   static int64_t previousClockHighTime;
-  static bool skipData = false;
 
   // Panel sends data when the clock is high
-  if (dscGetLevelISR(dscClockPin) == 1) {
-    dscSetLevelISR(dscWritePin, 0);  // Restores the data line after a virtual keypad write
+  if (dscGetLevelISR(DSC_CLOCK_PIN) == 1) {
+    dscSetLevelISR(DSC_WRITE_PIN, 0);  // Restores the data line after a virtual keypad write
     previousClockHighTime = esp_timer_get_time();
     return;
   }
@@ -597,34 +527,76 @@ static void IRAM_ATTR dscClockInterrupt() {
   // Saves data and resets counters after the clock cycle is complete (high for at least 1ms)
   if (dscClockHighTime > 1000) {
     dscKeybusTime = esp_timer_get_time();
+    bool skipData = false;
 
-    // Skips incomplete and redundant data from status commands - these are sent constantly on the keybus at a high
-    // rate, so they are always skipped.  Checking is required in the ISR to prevent flooding the buffer.
+    // Skips incomplete data
     if (dscIsrPanelBitTotal < 8) skipData = true;
-    else switch (dscIsrPanelData[0]) {
-      static uint8_t previousCmd05[dscDataSize];
-      static uint8_t previousCmd1B[dscDataSize];
 
-      case 0x05:  // Status: partitions 1-4
-        if (dscRedundantPanelDataISR(previousCmd05, dscIsrPanelData, dscIsrPanelByteCount)) skipData = true;
-        break;
+    // Verifies new 0x05 and 0x1B status data and skips redundant data to prevent flooding the
+    // buffer as these are sent constantly at a high rate.
+    else {
+      uint8_t index;
+      bool redundantData = true;
+      switch (dscIsrPanelData[0]) {
+        case 0x05: index = 0; break;  // Status: partitions 1-4
+        case 0x1B: index = 1; break;  // Status: partitions 5-8
+        default: redundantData = false; break;
+      }
 
-      case 0x1B:  // Status: partitions 5-8
-        if (dscRedundantPanelDataISR(previousCmd1B, dscIsrPanelData, dscIsrPanelByteCount)) skipData = true;
-        break;
+      if (redundantData) {
+        static uint8_t previousCmd[2][DSC_DATA_SIZE];
+        static uint8_t pendingCmd[2][DSC_DATA_SIZE];
+        static uint8_t countCmd[2];
+
+        for (uint8_t i = 0; i < DSC_DATA_SIZE; i++) {
+          if ((previousCmd[index][i] != dscIsrPanelData[i]) || countCmd[index] > 0) {
+
+            if (countCmd[index] == 0) {  // New pending data
+              for (uint8_t j = 0; j < DSC_DATA_SIZE; j++) pendingCmd[index][j] = dscIsrPanelData[j];
+              countCmd[index]++;
+            }
+            else {
+              bool newData = false;
+              for (uint8_t j = 0; j < DSC_DATA_SIZE; j++) {  // Checks if new data against pending data
+                if (pendingCmd[index][j] != dscIsrPanelData[j]) {
+                  newData = true;
+                  break;
+                }
+              }
+              if (newData) {  // Replaces pending data with new data
+                for (uint8_t j = 0; j < DSC_DATA_SIZE; j++) pendingCmd[index][j] = dscIsrPanelData[j];
+                countCmd[index] = 0;
+              }
+              else if (countCmd[index] >= (DSC_COMMAND_VERIFY_COUNT - 1)) {  // Sets data as verified
+                redundantData = false;
+                countCmd[index] = 0;
+              }
+              else countCmd[index]++;  // New data matches pending data, increment verification counter
+            }
+            break;
+          }
+        }
+
+        if (redundantData) skipData = true;
+        else {
+          for (uint8_t i = 0; i < DSC_DATA_SIZE; i++) previousCmd[index][i] = dscIsrPanelData[i];
+          skipData = false;
+        }
+      }
     }
 
     // Stores new panel data in the panel buffer
-    if (dscPanelBufferLength == dscBufferSize) dscBufferOverflow = true;
-    else if (!skipData && dscPanelBufferLength < dscBufferSize) {
-      for (uint8_t i = 0; i < dscDataSize; i++) dscPanelBuffer[dscPanelBufferLength][i] = dscIsrPanelData[i];
+    if (dscPanelBufferLength == DSC_BUFFER_SIZE) dscBufferOverflow = true;
+
+    else if (!skipData && dscPanelBufferLength < DSC_BUFFER_SIZE) {
+      for (uint8_t i = 0; i < DSC_DATA_SIZE; i++) dscPanelBuffer[dscPanelBufferLength][i] = dscIsrPanelData[i];
       dscPanelBufferBitCount[dscPanelBufferLength] = dscIsrPanelBitTotal;
       dscPanelBufferByteCount[dscPanelBufferLength] = dscIsrPanelByteCount;
       dscPanelBufferLength++;
     }
 
     // Resets the panel capture data and counters
-    for (uint8_t i = 0; i < dscDataSize; i++) dscIsrPanelData[i] = 0;
+    for (uint8_t i = 0; i < DSC_DATA_SIZE; i++) dscIsrPanelData[i] = 0;
     dscIsrPanelBitTotal = 0;
     dscIsrPanelBitCount = 0;
     dscIsrPanelByteCount = 0;
@@ -659,7 +631,7 @@ static void IRAM_ATTR dscClockInterrupt() {
     if (dscIsrPanelBitTotal == 0) {
 
       if (!((dscWriteKeyData >> 7) & 0x01)) {
-        dscSetLevelISR(dscWritePin, 1);
+        dscSetLevelISR(DSC_WRITE_PIN, 1);
       }
       writeStart = true;  // Resolves a timing issue where some writes do not begin at the correct bit
     }
@@ -667,7 +639,7 @@ static void IRAM_ATTR dscClockInterrupt() {
     // Writes the remaining alarm key data
     else if (writeStart && dscIsrPanelBitTotal <= 7) {
       if (!((dscWriteKeyData >> (7 - dscIsrPanelBitTotal)) & 0x01)) {
-        dscSetLevelISR(dscWritePin, 1);
+        dscSetLevelISR(DSC_WRITE_PIN, 1);
       }
 
       // Resets counters when the write is complete
@@ -688,7 +660,7 @@ static void IRAM_ATTR dscClockInterrupt() {
 
     // Checks dscWriteData[] for data to write associated with the current panel command
     if (dscIsrPanelBitTotal == 8) {
-      for (uint8_t i = 0; i < dscWriteSize; i++) {
+      for (uint8_t i = 0; i < DSC_WRITE_SIZE; i++) {
         if (dscWriteData[i][0] == dscIsrPanelData[0]) {
           writeDataIndex = i;
           writeStart = true;
@@ -710,7 +682,7 @@ static void IRAM_ATTR dscClockInterrupt() {
 
         // Writes data
         if (!bitRead(dscWriteData[writeDataIndex][dscIsrPanelByteCount], (7 - dscIsrPanelBitCount))) {
-          dscSetLevelISR(dscWritePin, 1);
+          dscSetLevelISR(DSC_WRITE_PIN, 1);
         }
 
         // Handles keypad key writes
@@ -728,21 +700,21 @@ static void IRAM_ATTR dscClockInterrupt() {
 }
 
 
-// Timer interrupt called by dscClockInterrupt() after dscTimerInterval to read the data line
+// Timer interrupt called by dscClockInterrupt() after DSC_TIMER_INTERVAL to read the data line
 // Data sent from the panel and keypads/modules has latency after a clock change (observed up to 160us for keypad data).
 static bool IRAM_ATTR dscDataInterrupt() {
-  timer_group_set_counter_enable_in_isr(dscTimerGroup, dscTimerNumber, TIMER_PAUSE);
+  timer_group_set_counter_enable_in_isr(DSC_TIMER_GROUP, DSC_TIMER_NUMBER, TIMER_PAUSE);
 
   // Panel sends data while the clock is high
-  if (dscGetLevelISR(dscClockPin) == 1) {
+  if (dscGetLevelISR(DSC_CLOCK_PIN) == 1) {
 
     // Reads panel data and sets data counters
-    if (dscIsrPanelByteCount < dscDataSize) {  // Limits Keybus data bytes to dscDataSize
+    if (dscIsrPanelByteCount < DSC_DATA_SIZE) {  // Limits Keybus data bytes to DSC_DATA_SIZE
       if (dscIsrPanelBitCount < 8) {
 
         // Data is captured in each byte by shifting left by 1 bit and writing to bit 0
         dscIsrPanelData[dscIsrPanelByteCount] <<= 1;
-        if (dscGetLevelISR(dscReadPin) == 1) {
+        if (dscGetLevelISR(DSC_READ_PIN) == 1) {
           dscIsrPanelData[dscIsrPanelByteCount] |= 1;
         }
       }
@@ -780,46 +752,46 @@ static void dscSetup() {
       .intr_type = TIMER_INTR_LEVEL,
       .counter_dir = TIMER_COUNT_UP,
       .auto_reload = TIMER_AUTORELOAD_EN,
-      .divider = dscTimerDivider
+      .divider = DSC_TIMER_DIVIDER
   };
-  timer_init(dscTimerGroup, dscTimerNumber, &timerConfig);
-  timer_set_counter_value(dscTimerGroup, dscTimerNumber, 0);
-  timer_set_alarm_value(dscTimerGroup, dscTimerNumber, dscTimerInterval);
-  timer_enable_intr(dscTimerGroup, dscTimerNumber);
-  timer_isr_callback_add(dscTimerGroup, dscTimerNumber, dscDataInterrupt, NULL, dscTimerISRPriority);
+  timer_init(DSC_TIMER_GROUP, DSC_TIMER_NUMBER, &timerConfig);
+  timer_set_counter_value(DSC_TIMER_GROUP, DSC_TIMER_NUMBER, 0);
+  timer_set_alarm_value(DSC_TIMER_GROUP, DSC_TIMER_NUMBER, DSC_TIMER_INTERVAL);
+  timer_enable_intr(DSC_TIMER_GROUP, DSC_TIMER_NUMBER);
+  timer_isr_callback_add(DSC_TIMER_GROUP, DSC_TIMER_NUMBER, dscDataInterrupt, NULL, DSC_TIMER_ISR_PRIORITY);
 
   // GPIO setup
   gpio_config_t gpioConfig = {};
   gpioConfig.intr_type = GPIO_INTR_DISABLE;
   gpioConfig.mode = GPIO_MODE_OUTPUT;
-  gpioConfig.pin_bit_mask = dscWritePinMask;
+  gpioConfig.pin_bit_mask = DSC_WRITE_PIN_MASK;
   gpioConfig.pull_down_en = 0;
   gpioConfig.pull_up_en = 0;
   gpio_config(&gpioConfig);
 
-  gpioConfig.pin_bit_mask = dscReadPinMask;
+  gpioConfig.pin_bit_mask = DSC_READ_PIN_MASK;
   gpioConfig.mode = GPIO_MODE_INPUT;
   gpio_config(&gpioConfig);
 
-  gpioConfig.pin_bit_mask = dscClockPinMask;
+  gpioConfig.pin_bit_mask = DSC_CLOCK_PIN_MASK;
   gpioConfig.intr_type = GPIO_INTR_ANYEDGE;
   gpioConfig.mode = GPIO_MODE_INPUT;
   gpio_config(&gpioConfig);
 
-  gpio_install_isr_service(dscGPIOISRPriority);
-  gpio_isr_handler_add(dscClockPin, dscClockInterrupt, NULL);
+  gpio_install_isr_service(DSC_GPIO_ISR_PRIORITY);
+  gpio_isr_handler_add(DSC_CLOCK_PIN, dscClockInterrupt, NULL);
 
   vTaskDelete(NULL);
 }
 
 
 void dsc_stop() {
-  gpio_isr_handler_remove(dscClockPin);
-  timer_disable_intr(dscTimerGroup, dscTimerNumber);
+  gpio_isr_handler_remove(DSC_CLOCK_PIN);
+  timer_disable_intr(DSC_TIMER_GROUP, DSC_TIMER_NUMBER);
 
   // Resets the panel capture data and counters
   dscPanelBufferLength = 0;
-  for (uint8_t i = 0; i < dscDataSize; i++) dscIsrPanelData[i] = 0;
+  for (uint8_t i = 0; i < DSC_DATA_SIZE; i++) dscIsrPanelData[i] = 0;
   dscIsrPanelBitTotal = 0;
   dscIsrPanelBitCount = 0;
   dscIsrPanelByteCount = 0;
@@ -832,14 +804,14 @@ void dsc_init() {
   dscWriteReady = false;
   dscWritePartition = 1;
   dscPauseStatus = false;
-  for (uint8_t i = 0; i < dscWriteSize; i++) {
-    for (uint8_t j = 0; j < dscDataSize; j++) {
+  for (uint8_t i = 0; i < DSC_WRITE_SIZE; i++) {
+    for (uint8_t j = 0; j < DSC_DATA_SIZE; j++) {
       dscWriteData[i][j] = 0xFF;
     }
   }
   dscWriteData[0][0] = 0x05;
-  if (dscWriteSize > 1) dscWriteData[1][0] = 0x11;
-  if (dscPartitions > 4 && dscWriteData[dscWriteSize - 1][0] == 0xFF) dscWriteData[dscWriteSize - 1][0] = 0x1B;
+  if (DSC_WRITE_SIZE > 1) dscWriteData[1][0] = 0x11;
+  if (DSC_PARTITIONS > 4 && dscWriteData[DSC_WRITE_SIZE - 1][0] == 0xFF) dscWriteData[DSC_WRITE_SIZE - 1][0] = 0x1B;
 
   // Task setup
   dscDataAvailable = xSemaphoreCreateBinary();
