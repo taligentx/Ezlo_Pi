@@ -501,12 +501,12 @@ bool IRAM_ATTR dscValidCRC() {
 }
 
 
-// Called as an interrupt when the DSC clock changes to write data for virtual keypad and setup timers to read
-// data after an interval.
+// Called as an interrupt when the DSC clock changes to write data for virtual keypad
+// and setup timers to read data after an interval.
 static void IRAM_ATTR dscClockInterrupt() {
 
-  // Sets up a timer that will call dscDataInterrupt() after DSC_TIMER_INTERVAL to read the data line.
-  // Data sent from the panel and keypads/modules has latency after a clock change (observed up to 160us for keypad data).
+  // Sets up a timer that will call dscDataInterrupt() after DSC_TIMER_INTERVAL to read the data line. Data sent
+  // from the panel and keypads/modules has latency after a clock change (observed up to 160us for keypad data).
   timer_group_set_counter_enable_in_isr(DSC_TIMER_GROUP, DSC_TIMER_NUMBER, TIMER_START);
 
   static int64_t previousClockHighTime;
@@ -515,11 +515,14 @@ static void IRAM_ATTR dscClockInterrupt() {
   if (dscGetLevelISR(DSC_CLOCK_PIN) == 1) {
     dscSetLevelISR(DSC_WRITE_PIN, 0);  // Restores the data line after a virtual keypad write
     previousClockHighTime = esp_timer_get_time();
+    GPIO.pin[DSC_CLOCK_PIN].int_type = GPIO_INTR_LOW_LEVEL;  // Toggles the interrupt type
     return;
   }
 
   // Keypads and modules send data while the clock is low
   dscClockHighTime = esp_timer_get_time() - previousClockHighTime;  // Tracks the clock high time to find the reset between commands
+
+  GPIO.pin[DSC_CLOCK_PIN].int_type = GPIO_INTR_HIGH_LEVEL;  // Toggles the interrupt type
 
   static bool writeStart = false;
   static bool wroteKey = false;
@@ -532,8 +535,9 @@ static void IRAM_ATTR dscClockInterrupt() {
     // Skips incomplete data
     if (dscIsrPanelBitTotal < 8) skipData = true;
 
-    // Verifies new 0x05 and 0x1B status data and skips redundant data to prevent flooding the
-    // buffer as these are sent constantly at a high rate.
+    // Skips redundant 0x05 and 0x1B status data to prevent flooding the buffer as these are sent
+    // constantly at a high rate and verifies new status data by requiring DSC_VERIFY_COUNT
+    // identical commands as these do not contain a CRC.
     else {
       uint8_t index;
       bool redundantData = true;
@@ -551,10 +555,13 @@ static void IRAM_ATTR dscClockInterrupt() {
         for (uint8_t i = 0; i < DSC_DATA_SIZE; i++) {
           if ((previousCmd[index][i] != dscIsrPanelData[i]) || countCmd[index] > 0) {
 
-            if (countCmd[index] == 0) {  // New pending data
+            if (DSC_VERIFY_COUNT <= 1) redundantData = false;
+
+            else if (countCmd[index] == 0) {  // New pending data
               for (uint8_t j = 0; j < DSC_DATA_SIZE; j++) pendingCmd[index][j] = dscIsrPanelData[j];
               countCmd[index]++;
             }
+
             else {
               bool newData = false;
               for (uint8_t j = 0; j < DSC_DATA_SIZE; j++) {  // Checks if new data against pending data
@@ -563,14 +570,17 @@ static void IRAM_ATTR dscClockInterrupt() {
                   break;
                 }
               }
+
               if (newData) {  // Replaces pending data with new data
                 for (uint8_t j = 0; j < DSC_DATA_SIZE; j++) pendingCmd[index][j] = dscIsrPanelData[j];
                 countCmd[index] = 0;
               }
-              else if (countCmd[index] >= (DSC_COMMAND_VERIFY_COUNT - 1)) {  // Sets data as verified
+
+              else if (countCmd[index] >= (DSC_VERIFY_COUNT - 1)) {  // Sets data as verified
                 redundantData = false;
                 countCmd[index] = 0;
               }
+
               else countCmd[index]++;  // New data matches pending data, increment verification counter
             }
             break;
@@ -764,17 +774,17 @@ static void dscSetup() {
   gpio_config_t gpioConfig = {};
   gpioConfig.intr_type = GPIO_INTR_DISABLE;
   gpioConfig.mode = GPIO_MODE_OUTPUT;
-  gpioConfig.pin_bit_mask = DSC_WRITE_PIN_MASK;
+  gpioConfig.pin_bit_mask = BIT64(DSC_WRITE_PIN);
   gpioConfig.pull_down_en = 0;
   gpioConfig.pull_up_en = 0;
   gpio_config(&gpioConfig);
 
-  gpioConfig.pin_bit_mask = DSC_READ_PIN_MASK;
+  gpioConfig.pin_bit_mask = BIT64(DSC_READ_PIN);
   gpioConfig.mode = GPIO_MODE_INPUT;
   gpio_config(&gpioConfig);
 
-  gpioConfig.pin_bit_mask = DSC_CLOCK_PIN_MASK;
-  gpioConfig.intr_type = GPIO_INTR_ANYEDGE;
+  gpioConfig.pin_bit_mask = BIT64(DSC_CLOCK_PIN);
+  gpioConfig.intr_type = GPIO_INTR_HIGH_LEVEL;
   gpioConfig.mode = GPIO_MODE_INPUT;
   gpio_config(&gpioConfig);
 

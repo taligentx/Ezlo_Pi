@@ -29,6 +29,7 @@
 #define DSC_BUFFER_SIZE 50  // Number of commands to buffer if the sketch is busy - requires DSC_DATA_SIZE + 2 bytes of memory per command
 #define DSC_DATA_SIZE 16    // Maximum bytes of a Keybus command
 #define DSC_WRITE_SIZE 6    // Maximum types of panel commands to write data to the panel from dscWriteData[]
+#define DSC_VERIFY_COUNT 3  // Number of status commands that must match sequentially to be considered valid data
 
 // Library control
 void dsc_init(void);        // Initializes the library
@@ -110,19 +111,13 @@ TaskHandle_t dscProcessHandle;
 SemaphoreHandle_t dscDataAvailable;
 bool dscPanelDataAvailable;
 
-// GPIO and timer interrupt setup
-#define DSC_CLOCK_PIN_MASK (1ULL << DSC_CLOCK_PIN)
-#define DSC_READ_PIN_MASK  (1ULL << DSC_READ_PIN)
-#define DSC_WRITE_PIN_MASK (1LL << DSC_WRITE_PIN)
+// Timer and GPIO interrupt setup
 #define DSC_TIMER_GROUP TIMER_GROUP_0
 #define DSC_TIMER_NUMBER TIMER_0
 #define DSC_TIMER_INTERVAL 50
 #define DSC_TIMER_DIVIDER 80
 #define DSC_TIMER_ISR_PRIORITY (ESP_INTR_FLAG_LEVEL3 | ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_SHARED)
 #define DSC_GPIO_ISR_PRIORITY (ESP_INTR_FLAG_LEVEL3 | ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_SHARED)
-
-// Data verification - number of status commands that must match sequentially to be considered valid data and added to the panel data buffer
-#define DSC_COMMAND_VERIFY_COUNT 3
 
 // Syntax compatibility wrappers
 #define bitRead(value, bit) (((value) >> (bit)) & 0x01)
