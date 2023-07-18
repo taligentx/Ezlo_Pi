@@ -17,10 +17,10 @@
 #define DSC_READ_PIN  19
 #define DSC_WRITE_PIN 21
 
-#elif defined(CONFIG_IDF_TARGET_ESP32S2)
-#define DSC_CLOCK_PIN 14
-#define DSC_READ_PIN  15
-#define DSC_WRITE_PIN 16
+#elif defined(CONFIG_IDF_TARGET_ESP32S3)
+#define DSC_CLOCK_PIN 11
+#define DSC_READ_PIN  12
+#define DSC_WRITE_PIN 13
 #endif
 
 // Data setup - partitions, zones, and buffer size can be customized

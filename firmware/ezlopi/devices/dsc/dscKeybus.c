@@ -825,7 +825,7 @@ void dsc_init() {
 
   // Task setup
   dscDataAvailable = xSemaphoreCreateBinary();
-  xTaskCreatePinnedToCore(dscSetup, "dscSetup", 2048, NULL, 0, NULL, APP_CPU_NUM);  // Ensures GPIO and timer interrupts are run on the app core to minimize contention with WiFi interrupts and the WSS task
-  xTaskCreatePinnedToCore(dscProcess, "dscProcess", 2048, NULL, 0, NULL, APP_CPU_NUM);
+  xTaskCreatePinnedToCore(dscSetup, "dscSetup", 4096, NULL, 0, NULL, APP_CPU_NUM);  // Ensures GPIO and timer interrupts are run on the app core to minimize contention with WiFi interrupts and the WSS task
+  xTaskCreatePinnedToCore(dscProcess, "dscProcess", 4096, NULL, 0, NULL, APP_CPU_NUM);
   xTaskCreatePinnedToCore(dscStatusExample, "dscStatusExample", 4096, NULL, 0, NULL, APP_CPU_NUM);
 }
