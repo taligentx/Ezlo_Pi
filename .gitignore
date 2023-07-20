@@ -22,6 +22,8 @@ firmware/bootloader/subproject/*
 **/cmake-build-debug/
 **/.vscode
 **/.idea
+**/sdkconfig
+**/sdkconfig.old
 
 # NUnit
 **/*.VisualState.xml
@@ -379,3 +381,7 @@ ui-qt/release/*
 ui-qt/esptool*
 ui-qt/ezpibins/*
 ui-qt/debug/*
+
+# macOS
+**/.DS_Store
+

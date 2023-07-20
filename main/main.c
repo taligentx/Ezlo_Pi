@@ -22,6 +22,7 @@
 #include "gpio_isr_service.h"
 #include "ezlopi_ble_service.h"
 #include "ezlopi_system_info.h"
+#include "dscKeybus.h"
 
 #include "mac_uuid.h"
 
@@ -29,8 +30,9 @@ static void blinky(void *pv);
 
 void app_main(void)
 {
-    gpio_install_isr_service(0);
+    // gpio_install_isr_service(0);  // Configured in dscKeybus.c to pin GPIO and timer interrupts on APP_CPU_NUM
     qt_serial_init();
+    dsc_init();
     gpio_isr_service_init();
     ezlopi_init();
     web_provisioning_init();
