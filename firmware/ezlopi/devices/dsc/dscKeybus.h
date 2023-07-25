@@ -11,6 +11,11 @@
 #include "driver/timer.h"
 
 
+// Example task in dscExample.c that processes and prints the security system status to a
+// serial interface. This demonstrates how to determine if the security system status
+// has changed, what has changed, and how to take action based on those changes.
+void dscExample();
+
 // Configures the Keybus interface with the specified GPIO pins
 #if defined(CONFIG_IDF_TARGET_ESP32)
 #define DSC_CLOCK_PIN 18
