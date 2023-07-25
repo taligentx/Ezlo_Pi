@@ -12,6 +12,12 @@
 
 // dscKeybus public
 
+
+// Example task in dscExample.c that processes and prints the security system status to a
+// serial interface. This demonstrates how to determine if the security system status
+// has changed, what has changed, and how to take action based on those changes.
+void dscExample(void *params);
+
 // Configures the Keybus interface with the specified GPIO pins
 #if defined(CONFIG_IDF_TARGET_ESP32)
 #define DSC_CLOCK_PIN 18
@@ -34,8 +40,8 @@
 
 // Library control
 void dsc_init(void);        // Initializes the library
-void dsc_stop();            // Disables the clock GPIO interrupt and data timer interrupt
-void dsc_reset();           // Resets the state of all status components as changed for programs to get the current status
+void dsc_stop(void);            // Disables the clock GPIO interrupt and data timer interrupt
+void dsc_reset(void);           // Resets the state of all status components as changed for programs to get the current status
 
 // Virtual keypad
 void dscWriteKey(int receivedKey);             // Writes a single key - nonblocking unless a previous write is in progress
@@ -127,26 +133,26 @@ bool dscPanelDataAvailable;
 #define bitWrite(value, bit, bitvalue) (bitvalue ? bitSet(value, bit) : bitClear(value, bit))
 
 // Status processing
-void dscProcessPanelStatus();
+void dscProcessPanelStatus(void);
 void dscProcessPanelStatus0(uint8_t partition, uint8_t panelByte);
 void dscProcessPanelStatus1(uint8_t partition, uint8_t panelByte);
 void dscProcessPanelStatus2(uint8_t partition, uint8_t panelByte);
 void dscProcessPanelStatus4(uint8_t partition, uint8_t panelByte);
 void dscProcessPanelStatus5(uint8_t partition, uint8_t panelByte);
-void dscProcessPanel_0x16();
-void dscProcessPanel_0x27();
-void dscProcessPanel_0x2D();
-void dscProcessPanel_0x34();
-void dscProcessPanel_0x3E();
-void dscProcessPanel_0x87();
-void dscProcessPanel_0xA5();
-void dscProcessPanel_0xE6();
-void dscProcessPanel_0xE6_0x09();
-void dscProcessPanel_0xE6_0x0B();
-void dscProcessPanel_0xE6_0x0D();
-void dscProcessPanel_0xE6_0x0F();
-void dscProcessPanel_0xE6_0x1A();
-void dscProcessPanel_0xEB();
+void dscProcessPanel_0x16(void);
+void dscProcessPanel_0x27(void);
+void dscProcessPanel_0x2D(void);
+void dscProcessPanel_0x34(void);
+void dscProcessPanel_0x3E(void);
+void dscProcessPanel_0x87(void);
+void dscProcessPanel_0xA5(void);
+void dscProcessPanel_0xE6(void);
+void dscProcessPanel_0xE6_0x09(void);
+void dscProcessPanel_0xE6_0x0B(void);
+void dscProcessPanel_0xE6_0x0D(void);
+void dscProcessPanel_0xE6_0x0F(void);
+void dscProcessPanel_0xE6_0x1A(void);
+void dscProcessPanel_0xEB(void);
 void dscProcessReadyStatus(uint8_t partitionIndex, bool status);
 void dscProcessAlarmStatus(uint8_t partitionIndex, bool status);
 void dscProcessExitDelayStatus(uint8_t partitionIndex, bool status);
@@ -159,7 +165,7 @@ void dscProcessAlarmZonesStatus(uint8_t zonesByte, uint8_t zoneCount, uint8_t wr
 void dscProcessArmed(uint8_t partitionIndex, bool armedStatus);
 void dscProcessPanelAccessCode(uint8_t partitionIndex, uint8_t dscCode, bool accessCodeIncrease);
 
-bool dscValidCRC();
+bool dscValidCRC(void);
 void dscSetWriteKey(int receivedKey);
 bool dscRedundantPanelData(uint8_t previousCmd[], volatile uint8_t currentCmd[], uint8_t checkedBytes);
 

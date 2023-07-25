@@ -1,8 +1,10 @@
 #include "dscKeybus.h"
 
 
+// Processes panel data to determine security status
+
 // Resets the state of all status components as changed for programs to get the current status
-void dsc_reset() {
+void dsc_reset(void) {
   dscStatusChanged = true;
   dscKeybusChanged = true;
   dscTroubleChanged = true;
@@ -79,7 +81,7 @@ bool dscSetTime(unsigned int year, uint8_t month, uint8_t day, uint8_t hour, uin
 
 
 // Processes status commands: 0x05 (Partitions 1-4) and 0x1B (Partitions 5-8)
-void dscProcessPanelStatus() {
+void dscProcessPanelStatus(void) {
 
   // Trouble status
   if (dscPanelData[3] <= 0x06) {  // Ignores trouble light status in intermittent states
@@ -336,7 +338,7 @@ void dscProcessPanelStatus() {
 }
 
 
-void dscProcessPanel_0x16() {
+void dscProcessPanel_0x16(void) {
   if (!dscValidCRC()) return;
 
   // Panel version
@@ -345,7 +347,7 @@ void dscProcessPanel_0x16() {
 
 
 // Panel status and zones 1-8 status
-void dscProcessPanel_0x27() {
+void dscProcessPanel_0x27(void) {
   if (!dscValidCRC()) return;
 
   // Messages
@@ -399,7 +401,7 @@ void dscProcessPanel_0x27() {
 
 
 // Zones 9-16 status is stored in dscOpenZones[1] and dscOpenZonesChanged[1]: Bit 0 = Zone 9 ... Bit 7 = Zone 16
-void dscProcessPanel_0x2D() {
+void dscProcessPanel_0x2D(void) {
   if (!dscValidCRC()) return;
   if (DSC_ZONES < 2) return;
   dscProcessZoneStatus(1, 6);
@@ -407,7 +409,7 @@ void dscProcessPanel_0x2D() {
 
 
 // Zones 17-24 status is stored in dscOpenZones[2] and dscOpenZonesChanged[2]: Bit 0 = Zone 17 ... Bit 7 = Zone 24
-void dscProcessPanel_0x34() {
+void dscProcessPanel_0x34(void) {
   if (!dscValidCRC()) return;
   if (DSC_ZONES < 3) return;
   dscProcessZoneStatus(2, 6);
@@ -415,7 +417,7 @@ void dscProcessPanel_0x34() {
 
 
 // Zones 25-32 status is stored in dscOpenZones[3] and dscOpenZonesChanged[3]: Bit 0 = Zone 25 ... Bit 7 = Zone 32
-void dscProcessPanel_0x3E() {
+void dscProcessPanel_0x3E(void) {
   if (!dscValidCRC()) return;
   if (DSC_ZONES < 4) return;
   dscProcessZoneStatus(3, 6);
@@ -428,7 +430,7 @@ void dscProcessPanel_0x3E() {
  *  dscPgmOutputs[0], Bit 0 = PGM 1 ... Bit 7 = PGM 8
  *  dscPgmOutputs[1], Bit 0 = PGM 9 ... Bit 5 = PGM 14
  */
-void dscProcessPanel_0x87() {
+void dscProcessPanel_0x87(void) {
   if (!dscValidCRC()) return;
 
   // Resets flag to write access code if needed when writing command output keys
@@ -457,7 +459,7 @@ void dscProcessPanel_0x87() {
 }
 
 
-void dscProcessPanel_0xA5() {
+void dscProcessPanel_0xA5(void) {
   if (!dscValidCRC()) return;
 
   dscProcessTime(2);
@@ -484,7 +486,7 @@ void dscProcessPanel_0xA5() {
  *
  *  0xE6 commands are split into multiple subcommands to handle up to 8 partitions/64 zones.
  */
-void dscProcessPanel_0xE6() {
+void dscProcessPanel_0xE6(void) {
   if (!dscValidCRC()) return;
 
   switch (dscPanelData[2]) {
@@ -498,31 +500,31 @@ void dscProcessPanel_0xE6() {
 
 
 // Zones 33-40 status is stored in dscOpenZones[4] and dscOpenZonesChanged[4]: Bit 0 = Zone 33 ... Bit 7 = Zone 40
-void dscProcessPanel_0xE6_0x09() {
+void dscProcessPanel_0xE6_0x09(void) {
   if (DSC_ZONES > 4) dscProcessZoneStatus(4, 3);
 }
 
 
 // Zones 41-48 status is stored in dscOpenZones[5] and dscOpenZonesChanged[5]: Bit 0 = Zone 41 ... Bit 7 = Zone 48
-void dscProcessPanel_0xE6_0x0B() {
+void dscProcessPanel_0xE6_0x0B(void) {
   if (DSC_ZONES > 5) dscProcessZoneStatus(5, 3);
 }
 
 
 // Zones 49-56 status is stored in dscOpenZones[6] and dscOpenZonesChanged[6]: Bit 0 = Zone 49 ... Bit 7 = Zone 56
-void dscProcessPanel_0xE6_0x0D() {
+void dscProcessPanel_0xE6_0x0D(void) {
   if (DSC_ZONES > 6) dscProcessZoneStatus(6, 3);
 }
 
 
 // Zones 57-64 status is stored in dscOpenZones[7] and dscOpenZonesChanged[7]: Bit 0 = Zone 57 ... Bit 7 = Zone 64
-void dscProcessPanel_0xE6_0x0F() {
+void dscProcessPanel_0xE6_0x0F(void) {
   if (DSC_ZONES > 7) dscProcessZoneStatus(7, 3);
 }
 
 
 // Panel status
-void dscProcessPanel_0xE6_0x1A() {
+void dscProcessPanel_0xE6_0x1A(void) {
 
   // Panel AC power trouble
   if (dscPanelData[6] & 0x10) dscPowerTrouble = true;
@@ -536,7 +538,7 @@ void dscProcessPanel_0xE6_0x1A() {
 }
 
 
-void dscProcessPanel_0xEB() {
+void dscProcessPanel_0xEB(void) {
   if (!dscValidCRC()) return;
   if (DSC_PARTITIONS < 3) return;
 
