@@ -42,10 +42,11 @@ void dsc_stop();            // Disables the clock GPIO interrupt and data timer 
 void dsc_reset();           // Resets the state of all status components as changed for programs to get the current status
 
 // Virtual keypad
-void dscWriteKey(int receivedKey);             // Writes a single key - nonblocking unless a previous write is in progress
-void dscWriteKeys(const char *receivedKeys);   // Writes multiple keys from a char array - blocks until the write is complete
-bool dscWriteReady;         // True when the library is ready to write a key
-uint8_t dscWritePartition;  // Set to the partition number to use for writing keys to the panel
+bool dscSetModuleSlot(uint8_t slotNumber, bool slotEnable);  // Registers/unregisters module slots for supervisory monitoring by the panel
+void dscWriteKey(int receivedKey);                           // Writes a single key - nonblocking unless a previous write is in progress
+void dscWriteKeys(const char *receivedKeys);                 // Writes multiple keys from a char array - blocks until the write is complete
+bool dscWriteReady;                                          // True when the library is ready to write a key
+uint8_t dscWritePartition;                                   // Set to the partition number to use for writing keys to the panel
 
 // Exit delay target states - these can be checked by programs using dscExitState[DSC_PARTITIONS]
 enum dscExitStateValues{DSC_EXIT_NONE, DSC_EXIT_STAY, DSC_EXIT_AWAY, DSC_EXIT_NO_ENTRY_DELAY};

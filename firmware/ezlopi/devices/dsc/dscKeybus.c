@@ -226,6 +226,89 @@ void dscSetWriteKey(int receivedKey) {
 }
 
 
+// Registers/unregisters with the panel as the specified keypad or module slot.  The panel will
+// supervise and trigger a trouble condition if this device stops responding.
+bool dscSetModuleSlot(uint8_t slotNumber, bool slotEnable) {
+  uint8_t moduleByte, slotMask;
+
+  // Early generation panels support up to 20 module slots
+  if (dscKeybusVersion1 && slotNumber > 20) return false;
+
+  switch (slotNumber) {
+    case 1: moduleByte = 2; slotMask = 0x3F; break;   // Keypad 1
+    case 2: moduleByte = 2; slotMask = 0xCF; break;   // Keypad 2
+    case 3: moduleByte = 2; slotMask = 0xF3; break;   // Keypad 3
+    case 4: moduleByte = 2; slotMask = 0xFC; break;   // Keypad 4
+    case 5: moduleByte = 3; slotMask = 0x3F; break;   // Keypad 5
+    case 6: moduleByte = 3; slotMask = 0xCF; break;   // Keypad 6
+    case 7: moduleByte = 3; slotMask = 0xF3; break;   // Keypad 7
+    case 8: moduleByte = 3; slotMask = 0xFC; break;   // Keypad 8
+    case 15: moduleByte = 5; slotMask = 0xF3; break;  // PC/RF5152 module
+    case 16: moduleByte = 5; slotMask = 0xFC; break;  // PC5208 PGM module
+    case 17: moduleByte = 6; slotMask = 0x3F; break;  // PC5204 power supply module
+    case 18: moduleByte = 6; slotMask = 0xCF; break;
+    case 19: moduleByte = 6; slotMask = 0xF3; break;
+    case 20: moduleByte = 6; slotMask = 0xFC; break;
+    case 21: moduleByte = 7; slotMask = 0x3F; break;
+    case 22: moduleByte = 7; slotMask = 0xCF; break;
+    case 23: moduleByte = 7; slotMask = 0xF3; break;
+    case 25: moduleByte = 8; slotMask = 0x3F; break;
+    case 26: moduleByte = 8; slotMask = 0xCF; break;
+    case 27: moduleByte = 8; slotMask = 0xF3; break;
+    case 28: moduleByte = 8; slotMask = 0xFC; break;
+    default: return false;
+  }
+
+  if (slotEnable) {
+    uint8_t writeIndex = 0;
+
+    // Checks if an existing dscWriteData index is setup for 0x11 module writes
+    for (uint8_t i = 0; i < DSC_WRITE_SIZE; i++) {
+      if (dscWriteData[i][0] == 0x11) {
+        writeIndex = i;
+        break;
+      }
+    }
+
+    // Sets a new dscWriteData index for 0x11 module writes
+    if (!writeIndex) {
+      for (uint8_t i = 0; i < DSC_WRITE_SIZE; i++) {
+        if (dscWriteData[i][0] == 0xFF) {
+          dscWriteData[i][0] = 0x11;
+          writeIndex = i;
+          break;
+        }
+      }
+    }
+
+    if (writeIndex) dscWriteData[writeIndex][moduleByte] &= slotMask;
+    else return false;
+  }
+
+  else {
+
+    // Removes the slot mask
+    for (uint8_t i = 0; i < DSC_WRITE_SIZE; i++) {
+      if (dscWriteData[i][0] == 0x11) {
+        dscWriteData[i][moduleByte] |= ~slotMask;
+
+        bool slotsEmpty = true;
+
+        for (uint8_t j = 1; j < DSC_DATA_SIZE; j++) {
+          if (dscWriteData[i][j] != 0xFF) {
+            slotsEmpty = false;
+          }
+        }
+
+        if (slotsEmpty) dscWriteData[i][0] = 0xFF;  // Removes the dscWriteData index if no longer needed
+        break;
+      }
+    }
+  }
+  return true;
+}
+
+
 // Checks for redundant panel data
 bool dscRedundantPanelData(uint8_t previousCmd[], volatile uint8_t currentCmd[], uint8_t checkedBytes) {
   bool redundantData = true;
@@ -588,7 +671,6 @@ void dsc_init() {
     }
   }
   dscWriteData[0][0] = 0x05;
-  if (DSC_WRITE_SIZE > 1) dscWriteData[1][0] = 0x11;
   if (DSC_PARTITIONS > 4 && dscWriteData[DSC_WRITE_SIZE - 1][0] == 0xFF) dscWriteData[DSC_WRITE_SIZE - 1][0] = 0x1B;
 
   // Task setup
